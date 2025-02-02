@@ -1,24 +1,27 @@
 [project]
-name = "housing-price"
+name = "airbnb-listing"
 version = "0.0.1"
-description = "Housing prices project"
+description = "Airbnb list prediction project"
 requires-python = ">=3.11, <3.12"
-dependencies = ["mlflow==2.17.0",
-                "cffi==1.17.1",
-                "cloudpickle==3.1.0",
-                "matplotlib==3.9.2",
-                "numpy==1.26.4",
-                "pandas==2.2.3",
-                "psutil==6.0.0",
-                "pyarrow==14.0.1",
-                "scikit-learn==1.5.2",
-                "lightgbm==4.5.0",
-                "scipy==1.14.1",
-                "databricks-feature-engineering==0.6",
-                "databricks-feature-lookup==1.2.0",
-                "databricks-sdk==0.32.0",
-                "pydantic==2.9.2"
-                ]
+dependencies = [
+    "mlflow==2.17.0",
+    "cffi==1.17.1",
+    "cloudpickle==3.1.0",
+    "matplotlib==3.9.2",
+    "numpy==1.26.4",
+    "pandas==2.2.3",
+    "psutil==6.0.0",
+    "pyarrow==14.0.1",
+    "scikit-learn==1.5.2",
+    "lightgbm==4.5.0",
+    "scipy==1.14.1",
+    "databricks-feature-engineering==0.6",
+    "databricks-feature-lookup==1.2.0",
+    "databricks-sdk==0.32.0",
+    "pydantic==2.9.2",
+    "ipykernel>=6.29.5",
+    "seaborn>=0.13.2",
+]
 
 [project.optional-dependencies]
 dev = ["databricks-connect>=15.4.1, <16",
@@ -33,7 +36,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where =["src"]
-include = ["house_price*"]
+include = ["airbnb_listing*"]
 
 [tool.ruff]
 line-length = 120
