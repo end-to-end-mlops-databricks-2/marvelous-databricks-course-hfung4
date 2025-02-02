@@ -1,11 +1,12 @@
-import pandas as pd
-import numpy as np
 from datetime import datetime
+
+import numpy as np
+import pandas as pd
+from databricks.connect import DatabricksSession
+from pyspark.sql.functions import current_timestamp, to_utc_timestamp
+
 from airbnb_listing.config import config
 from airbnb_listing.logging import logger
-from pyspark.sql.functions import current_timestamp, to_utc_timestamp
-from databricks.connect import DatabricksSession
-
 
 spark = DatabricksSession.builder.getOrCreate()
 

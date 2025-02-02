@@ -1,11 +1,11 @@
 from pathlib import Path
 from typing import List
 
-# Pydantic
-from pydantic import BaseModel
-
 # Yaml
 import yaml
+
+# Pydantic
+from pydantic import BaseModel
 
 # Project Directories
 
