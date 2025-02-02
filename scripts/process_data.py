@@ -1,7 +1,7 @@
 from airbnb_listing.data_processor import DataProcessor
+from airbnb_listing.config import config
 import pandas as pd
 from databricks.connect import DatabricksSession
-from airbnb_listing.config import config
 
 spark = DatabricksSession.builder.getOrCreate()
 
