@@ -2,7 +2,14 @@
 RANDOM_STATE: 42
 MODEL_NAME: airbnb_price_listing
 RUN_ON_DATABRICKS_WORKSPACE: False
+env: dev
 
+# Data and schemas
+DEV_CATALOG: dev
+STAGING_CATALOG: staging
+PROD_CATALOG: prod
+BRONZE_SCHEMA: bronze
+SILVER_SCHEMA: silver
 
 
 # Model configuration

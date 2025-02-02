@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
-from config import LOGS_DIR
+from airbnb_listing.config import LOGS_DIR
 
 
 def setup_logger(

@@ -10,10 +10,8 @@ import yaml
 
 # Project Directories
 
-# Move up one levels from `config`
-# (e.g., the immediate parent directory path/to/config, and the grandparent directory path/to/ptb_ltc)
 PACKAGE_ROOT = Path(__file__).resolve().parent  # path/to/airbnb_listing
-ROOT = PACKAGE_ROOT.parent.parent  # two levels up from /airbnb_listing
+ROOT = PACKAGE_ROOT.parent.parent  # repo root
 LOGS_DIR = Path(ROOT / "logs")
 TESTS_DIR = Path(ROOT / "tests")
 CONFIG_FILE_PATH = ROOT / "project_config.yml"
@@ -23,7 +21,11 @@ CONFIG_FILE_PATH = ROOT / "project_config.yml"
 class GeneralConfig(BaseModel):
     RANDOM_STATE: int
     MODEL_NAME: str
-    RUN_ON_DATABRICKS_WORKSPACE: bool
+    DEV_CATALOG: str
+    STAGING_CATALOG: str
+    PROD_CATALOG: str
+    BRONZE_SCHEMA: str
+    SILVER_SCHEMA: str
 
 
 class ModelConfig(BaseModel):

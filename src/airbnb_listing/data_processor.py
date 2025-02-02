@@ -2,6 +2,12 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from airbnb_listing.config import config
+from airbnb_listing.logging import logger
+from pyspark.sql.functions import current_timestamp, to_utc_timestamp
+from databricks.connect import DatabricksSession
+
+
+spark = DatabricksSession.builder.getOrCreate()
 
 
 class DataProcessor:
@@ -73,3 +79,29 @@ class DataProcessor:
         self.df = self.df.loc[:, selected_columns]
 
         return self.df
+
+    def write_processed_data(self, df: pd.DataFrame, table_name: str):
+        """Write the processed data to a file
+
+        Args:
+            df (pd.DataFrame): processed dataframe
+            table_name (str): three-level name of the table in Unity Catalog
+        """
+        # Convert the processed pandas dataFrame to a Spark DataFrame
+        processed_spark = spark.createDataFrame(df).withColumn(
+            "update_timestamp_utc", to_utc_timestamp(current_timestamp(), "UTC")
+        )
+
+        # Write table to Unity Catalog
+        processed_spark.write.mode("append").saveAsTable(table_name)
+
+        # Modify a Delta table property to enable Change Data Feed (CDF)
+        # CDF allows tracking row-level changes (INSERT, UPDATE, DELETE) in Delta Tables.
+        # With CDF enabled, you can query changes since a specific version or timestamp.
+        # This is useful for incremental data processing, audting, and real-time analytics.
+        spark.sql(
+            f"ALTER TABLE {table_name} "
+            "SET TBLPROPERTIES (delta.enableChangeDataFeed = true);"
+        )
+
+        logger.info(f"Data written to {table_name} in Unity Catalog.")
