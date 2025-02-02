@@ -27,7 +27,7 @@ INTEGER_COLUMNS:
 SELECTED_CATEGORICAL_FEATURES:
   - is_manhattan
   - neighbourhood
-  - room_type                        
+  - room_type
 
 SELECTED_NUMERIC_FEATURES:
   - minimum_nights

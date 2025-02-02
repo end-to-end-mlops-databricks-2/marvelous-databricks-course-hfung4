@@ -39,15 +39,11 @@ def setup_logger(
 
     log_file = Path(log_file)  # Ensure it's a Path object
     if not log_file.exists():
-        log_file.parent.mkdir(
-            parents=True, exist_ok=True
-        )  # Ensure parent directories exist
+        log_file.parent.mkdir(parents=True, exist_ok=True)  # Ensure parent directories exist
         log_file.touch()  # Create an empty log file
 
     # Create a rotating file handler
-    file_handler = RotatingFileHandler(
-        log_file, maxBytes=max_bytes, backupCount=backup_count
-    )
+    file_handler = RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count)
     file_handler.setLevel(file_log_level)
 
     # Create a console handler
@@ -55,16 +51,12 @@ def setup_logger(
     console_handler.setLevel(console_log_level)
 
     # Create a logging format
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
 
     # Add the handlers to the logger
-    if (
-        not logger.handlers
-    ):  # To avoid adding handlers multiple times in case of reconfiguration
+    if not logger.handlers:  # To avoid adding handlers multiple times in case of reconfiguration
         logger.addHandler(file_handler)
         logger.addHandler(console_handler)
 

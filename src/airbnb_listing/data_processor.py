@@ -42,12 +42,8 @@ class DataProcessor:
         self.df["minimum_nights"] = self.df["minimum_nights"].clip(upper=14)
 
         # elapse time since last review
-        self.df["last_review"] = pd.to_datetime(
-            self.df["last_review"], format="%Y-%m-%d", errors="coerce"
-        )
-        self.df["days_since_last_review"] = (
-            datetime.now() - self.df["last_review"]
-        ).dt.days
+        self.df["last_review"] = pd.to_datetime(self.df["last_review"], format="%Y-%m-%d", errors="coerce")
+        self.df["days_since_last_review"] = (datetime.now() - self.df["last_review"]).dt.days
 
         # Estimate for how long a house has been listed.
         # This duration is calculated by dividing the total number of reviews
@@ -60,12 +56,9 @@ class DataProcessor:
         )
 
         # Lump rare neghbourhoods into 'Other'
-        neighbourhood_percentage = (
-            self.df["neighbourhood"].value_counts(normalize=True) * 100
-        )
+        neighbourhood_percentage = self.df["neighbourhood"].value_counts(normalize=True) * 100
         self.df["neighbourhood"] = self.df["neighbourhood"].where(
-            self.df["neighbourhood"].map(neighbourhood_percentage)
-            >= config.model.THRESHOLD_NEIGHBOURHOOD,
+            self.df["neighbourhood"].map(neighbourhood_percentage) >= config.model.THRESHOLD_NEIGHBOURHOOD,
             "Other",
         )
 
@@ -100,9 +93,6 @@ class DataProcessor:
         # CDF allows tracking row-level changes (INSERT, UPDATE, DELETE) in Delta Tables.
         # With CDF enabled, you can query changes since a specific version or timestamp.
         # This is useful for incremental data processing, audting, and real-time analytics.
-        spark.sql(
-            f"ALTER TABLE {table_name} "
-            "SET TBLPROPERTIES (delta.enableChangeDataFeed = true);"
-        )
+        spark.sql(f"ALTER TABLE {table_name} " "SET TBLPROPERTIES (delta.enableChangeDataFeed = true);")
 
         logger.info(f"Data written to {table_name} in Unity Catalog.")
