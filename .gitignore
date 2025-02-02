@@ -106,3 +106,4 @@ scratch/*
 data/
 .csv
 .parquet
+.databricks

@@ -1,0 +1,38 @@
+# General configuration for the project
+RANDOM_STATE: 42
+MODEL_NAME: airbnb_price_listing
+RUN_ON_DATABRICKS_WORKSPACE: False
+
+
+
+# Model configuration
+TARGET: log_price
+ID_COLUMN: id
+
+INTEGER_COLUMNS:
+  - host_id
+  - price
+  - minimum_nights
+  - number_of_reviews
+  - calculated_host_listings_count
+  - availability_365
+
+SELECTED_CATEGORICAL_FEATURES:
+  - is_manhattan
+  - neighbourhood
+  - room_type                        
+
+SELECTED_NUMERIC_FEATURES:
+  - minimum_nights
+  - latitude
+  - longitude
+  - days_since_last_review
+  - estimated_listed_months
+  - availability_365
+  - number_of_reviews
+  - calculated_host_listings_count
+
+SELECTED_TEXT_FEATURES:
+  - name
+
+THRESHOLD_NEIGHBOURHOOD: 0.01
