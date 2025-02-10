@@ -35,6 +35,7 @@ class ModelConfig(BaseModel):
     SELECTED_NUMERIC_FEATURES: List[str]
     SELECTED_TEXT_FEATURES: List[str]
     THRESHOLD_NEIGHBOURHOOD: float
+    TEST_SIZE: float
 
 
 # Master config object

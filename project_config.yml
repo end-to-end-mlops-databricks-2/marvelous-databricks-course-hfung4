@@ -16,6 +16,8 @@ SILVER_SCHEMA: silver
 TARGET: log_price
 ID_COLUMN: id
 
+TEST_SIZE: 0.2
+
 INTEGER_COLUMNS:
   - host_id
   - price

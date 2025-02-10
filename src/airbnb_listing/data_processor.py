@@ -16,7 +16,7 @@ class DataProcessor:
         self.df = pandas_df  # Store the DataFrame as self.df
         # self.config = config  # Store the configuration
 
-    def preprocess(self):
+    def preprocess(self) -> pd.DataFrame:
         """Preprocess the data and perform feature engineering
 
         Returns:
