@@ -1,5 +1,5 @@
 [project]
-name = "airbnb-listing"
+name = "airbnb_listing"
 version = "0.0.1"
 description = "Airbnb list prediction project"
 requires-python = ">=3.11, <3.12"
@@ -38,7 +38,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where =["src"]
-include = ["airbnb_listing*"]
+include = ["airbnb-listing*"]
 
 [tool.ruff]
 line-length = 120
