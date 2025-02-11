@@ -41,7 +41,11 @@ SELECTED_NUMERIC_FEATURES:
   - number_of_reviews
   - calculated_host_listings_count
 
-SELECTED_TEXT_FEATURES:
-  - name
-
 THRESHOLD_NEIGHBOURHOOD: 0.01
+
+# Model parameters
+MODEL_PARAMS:
+  learning_rate: 0.01
+  n_estimators: 400
+  max_depth: 7
+  num_leaves: 70

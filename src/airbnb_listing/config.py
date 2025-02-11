@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
 
 # Yaml
 import yaml
@@ -33,9 +33,9 @@ class ModelConfig(BaseModel):
     INTEGER_COLUMNS: List[str]
     SELECTED_CATEGORICAL_FEATURES: List[str]
     SELECTED_NUMERIC_FEATURES: List[str]
-    SELECTED_TEXT_FEATURES: List[str]
     THRESHOLD_NEIGHBOURHOOD: float
     TEST_SIZE: float
+    MODEL_PARAMS: Dict[str, Any]  # Dictionary to hold model-related parameters
 
 
 # Master config object
@@ -105,3 +105,9 @@ def create_and_validate_config(parsed_config: object = None) -> Config:
 
 # Load the configuration
 config = create_and_validate_config()
+
+
+# Validated tags
+class Tags(BaseModel):
+    git_sha: str
+    branch: str

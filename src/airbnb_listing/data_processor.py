@@ -67,7 +67,6 @@ class DataProcessor:
             [config.model.ID_COLUMN]
             + config.model.SELECTED_CATEGORICAL_FEATURES
             + config.model.SELECTED_NUMERIC_FEATURES
-            + config.model.SELECTED_TEXT_FEATURES
             + [config.model.TARGET]
         )
         self.df = self.df.loc[:, selected_columns]
