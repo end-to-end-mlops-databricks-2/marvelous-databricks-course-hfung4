@@ -1,6 +1,5 @@
-# General configuration for the project
+# General configuration ---------------------------------------------------------------------
 RANDOM_STATE: 42
-MODEL_NAME: airbnb_price_listing
 RUN_ON_DATABRICKS_WORKSPACE: False
 env: dev
 
@@ -10,9 +9,17 @@ STAGING_CATALOG: staging
 PROD_CATALOG: prod
 BRONZE_SCHEMA: bronze
 SILVER_SCHEMA: silver
+GOLD_SCHEMA: gold
+
+# Feature table name
+FEATURE_TABLE_NAME: airbnb_price_listing_features
+
+# Experiment name
+EXPERIMENT_NAME_FE: /Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/airbnb_price_listing_fe
 
 
-# Model configuration
+# Model configuration ------------------------------------------------------------------------
+MODEL_NAME: airbnb_price_listing
 TARGET: log_price
 ID_COLUMN: id
 
@@ -35,11 +42,13 @@ SELECTED_NUMERIC_FEATURES:
   - minimum_nights
   - latitude
   - longitude
-  - days_since_last_review
   - estimated_listed_months
   - availability_365
   - number_of_reviews
   - calculated_host_listings_count
+
+SELECTED_TIMESTAMP_FEATURES:
+  - last_review
 
 THRESHOLD_NEIGHBOURHOOD: 0.01
 

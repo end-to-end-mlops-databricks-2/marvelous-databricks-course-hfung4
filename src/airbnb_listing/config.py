@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 # Yaml
 import yaml
@@ -19,20 +19,24 @@ CONFIG_FILE_PATH = ROOT / "project_config.yml"
 # Pydantic model for project configuration
 class GeneralConfig(BaseModel):
     RANDOM_STATE: int
-    MODEL_NAME: str
     DEV_CATALOG: str
     STAGING_CATALOG: str
     PROD_CATALOG: str
     BRONZE_SCHEMA: str
     SILVER_SCHEMA: str
+    GOLD_SCHEMA: str
+    FEATURE_TABLE_NAME: str
+    EXPERIMENT_NAME_FE: Optional[str]  # can be str or None
 
 
 class ModelConfig(BaseModel):
+    MODEL_NAME: str
     TARGET: str
     ID_COLUMN: str
     INTEGER_COLUMNS: List[str]
     SELECTED_CATEGORICAL_FEATURES: List[str]
     SELECTED_NUMERIC_FEATURES: List[str]
+    SELECTED_TIMESTAMP_FEATURES: List[str]
     THRESHOLD_NEIGHBOURHOOD: float
     TEST_SIZE: float
     MODEL_PARAMS: Dict[str, Any]  # Dictionary to hold model-related parameters
