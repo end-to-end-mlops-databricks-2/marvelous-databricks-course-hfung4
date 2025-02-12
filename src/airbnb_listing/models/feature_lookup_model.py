@@ -1,10 +1,12 @@
-from databricks import feature_engineering
 from databricks.connect import DatabricksSession
-from databricks.feature_engineering import FeatureLookup
 from databricks.sdk import WorkspaceClient
 
-from airbnb_listing.config import Config, Tags
+from airbnb_listing.config import Config, Tags, config
 from airbnb_listing.logging import logger
+
+if config.general.RUN_ON_DATABRICKS_WORKSPACE:
+    from databricks import feature_engineering
+    from databricks.feature_engineering import FeatureLookup
 
 
 # Feature Lookup Model
