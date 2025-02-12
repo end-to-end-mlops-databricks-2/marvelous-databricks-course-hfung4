@@ -1,12 +1,13 @@
+from datetime import datetime
+
+import pandas as pd
+from databricks import feature_engineering
 from databricks.connect import DatabricksSession
+from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from databricks.sdk import WorkspaceClient
 
-from airbnb_listing.config import Config, Tags, config
+from airbnb_listing.config import Config, Tags
 from airbnb_listing.logging import logger
-
-if config.general.RUN_ON_DATABRICKS_WORKSPACE:
-    from databricks import feature_engineering
-    from databricks.feature_engineering import FeatureLookup
 
 
 # Feature Lookup Model
@@ -43,7 +44,8 @@ class FeatureLookUpModel:
 
         # Mlflow configuration
         self.experiment_name = self.config.general.EXPERIMENT_NAME_FE
-        self.tags = tags.model_dump()
+        # self.tags = tags.model_dump()
+        self.tags = tags.dict()
 
     def create_feature_table(self):
         """Create the feature table in the gold layer."""
@@ -91,8 +93,11 @@ class FeatureLookUpModel:
         RETURNS DOUBLE
         LANGUAGE PYTHON AS
         $$
-        from datetime import datetime
-        return (datetime.now() - last_review).dt.days
+        from datetime import datetime, timezone
+        if last_review is None:
+            return None
+        else:
+            return (datetime.now(timezone.utc) - last_review).total_seconds() / 86400
         $$
         """
         self.spark.sql(query)
@@ -107,11 +112,9 @@ class FeatureLookUpModel:
 
         # Since I need the test set to evaluate the trained model and compute performance metrics, I need
         # all features (including the ones that will be retrieved from the feature table)
-        self.test_set = (
-            self.spark.table(f"{self.catalog_name}.{self.silver_schema}.airbnb_listing_price_test")
-            .drop("last_review")
-            .toPandas()
-        )
+        self.test_set = self.spark.table(
+            f"{self.catalog_name}.{self.silver_schema}.airbnb_listing_price_test"
+        ).toPandas()
 
         logger.info("✅ Data loaded successfully.")
 
@@ -129,33 +132,30 @@ class FeatureLookUpModel:
                     feature_names=["latitude", "longitude", "is_manhattan"],
                     lookup_key=self.ID_COLUMN,
                 ),
-                # FeatureFunction(
-                #    udf_name=self.function_name,
-                #    output_name="days_since_last_review",
-                #    # key is input argument of the function, value is the column name in input dataframe
-                #    input_bindings={"last_review": "last_review"},
-                # ),
+                FeatureFunction(
+                    udf_name=self.function_name,
+                    output_name="days_since_last_review",
+                    # key is input argument of the function, value is the column name in input dataframe
+                    input_bindings={"last_review": "last_review"},
+                ),
             ],
-            exclude_columns=["last_review", "update_timestamp_utc"],
+            exclude_columns=["update_timestamp_utc"],
         )
 
         # Create the training set (in Pandas)
-        # self.training_df = self.training_set_spec.load_df().toPandas()
+        self.training_df = self.training_set_spec.load_df().toPandas()
 
         # Create the days_since_last_review feature for the test set that is used
         # to evaluate the trained model
-        # self.test_set["days_since_last_review"] = (
-        #    datetime.now() - self.test_set["last_review"]
-        # ).dt.days
+        self.test_set["days_since_last_review"] = self.test_set["last_review"].apply(
+            lambda x: (datetime.now() - x).days if pd.notna(x) else None
+        )
 
         # Create X_train, y_train, X_test, y_test for model training and evaluation
-        # self.X_train = self.training_df[
-        #    self.num_features + self.cat_features + ["days_since_last_review"]
-        # ]
-        # self.y_train = self.training_df[self.target]
-        # self.X_test = self.test_set[
-        #    self.num_features + self.cat_features + ["days_since_last_review"]
-        # ]
-        # self.y_test = self.test_set[self.target]
+        self.X_train = self.training_df[self.num_features + self.cat_features + ["days_since_last_review"]]
+        self.y_train = self.training_df[self.target]
+        self.X_test = self.test_set[self.num_features + self.cat_features]
+        self.X_test = self.test_set[self.num_features + self.cat_features + ["days_since_last_review"]]
+        self.y_test = self.test_set[self.target]
 
-        # logger.info("✅ Feature engineering completed.")
+        logger.info("✅ Feature engineering completed.")
