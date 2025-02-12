@@ -103,7 +103,7 @@ dmypy.json
 
 # Notebooks
 scratch/*
-*.ipynb
+.ipynb
 
 # data
 data/
