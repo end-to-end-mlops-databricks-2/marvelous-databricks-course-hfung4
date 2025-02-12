@@ -8,6 +8,7 @@ from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from databricks.sdk import WorkspaceClient
 from lightgbm import LGBMRegressor
 from mlflow.models import infer_signature
+from mlflow.tracking import MlflowClient
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -241,3 +242,31 @@ class FeatureLookUpModel:
                 training_set=self.training_set_spec,
                 signature=signature,
             )
+
+    def register_model(self):
+        """Register the model in the model registry"""
+        registered_model = mlflow.register_model(
+            model_uri=f"runs:/{self.run_id}/lightgbm-pipeline-model-fe",
+            name=f"{self.catalog}.{self.schema_name}.{self.config.model.MODEL_NAME}",
+            tags=self.tags,
+        )
+
+        # Get the latest version of the model (an integer)
+        latest_version = registered_model.version
+
+        client = MlflowClient()
+        # Set alias for the model version
+        client.set_registered_model_alias(
+            name=f"{self.catalog}.{self.schema_name}.{self.config.model.MODEL_NAME}",
+            alias="latest-model",
+            version=latest_version,
+        )
+
+    def load_latest_model_and_predict(self, X):
+        """Load the latest model and make predictions"""
+        # Load the latest model version from MLFlow using Feature Engineering client
+        model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.config.model.MODEL_NAME}@latest-model"
+
+        # Make predictions
+        predictions = self.fe.score_batch(model_uri=model_uri, df=X)
+        return predictions
