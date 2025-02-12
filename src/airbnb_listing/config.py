@@ -19,6 +19,7 @@ CONFIG_FILE_PATH = ROOT / "project_config.yml"
 # Pydantic model for project configuration
 class GeneralConfig(BaseModel):
     RANDOM_STATE: int
+    RUN_ON_DATABRICKS_WORKSPACE: bool
     DEV_CATALOG: str
     STAGING_CATALOG: str
     PROD_CATALOG: str
