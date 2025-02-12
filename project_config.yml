@@ -10,6 +10,7 @@ PROD_CATALOG: prod
 BRONZE_SCHEMA: bronze
 SILVER_SCHEMA: silver
 GOLD_SCHEMA: gold
+ML_ASSET_SCHEMA: airbnb_listing_ml_assets
 
 # Feature table name
 FEATURE_TABLE_NAME: airbnb_price_listing_features

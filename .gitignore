@@ -12,6 +12,7 @@ __pycache__/
 # Folders
 data/*
 logs/*
+notebooks/*
 
 # Distribution / packaging
 .Python
@@ -102,6 +103,7 @@ dmypy.json
 
 # Notebooks
 scratch/*
+*.ipynb
 
 # data
 data/

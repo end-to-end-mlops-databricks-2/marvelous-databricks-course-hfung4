@@ -24,8 +24,8 @@ class DataProcessor:
         self.df.dropna(subset=["price"], inplace=True)
 
         # Convert certain float columns to Int64 (pandas nullable integer type)
-        for col in config.model.INTEGER_COLUMNS:
-            self.df[col] = self.df[col].astype("Int64")  # Nullable integer
+        # for col in config.model.INTEGER_COLUMNS:
+        #    self.df[col] = self.df[col].astype("Int64")  # Nullable integer
 
         # Convert the id column to a string
         self.df[config.model.ID_COLUMN] = self.df[config.model.ID_COLUMN].astype(str)

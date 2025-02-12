@@ -7,9 +7,8 @@ from databricks.connect import DatabricksSession
 from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from databricks.sdk import WorkspaceClient
 from lightgbm import LGBMRegressor
-from mlflow.models import ModelSignature, infer_signature
+from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
-from mlflow.types.schema import ColSpec, Schema
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -47,6 +46,7 @@ class FeatureLookUpModel:
         )  # hardcoded for now, later it will be dependent on the target environment
         self.silver_schema = self.config.general.SILVER_SCHEMA
         self.gold_schema = self.config.general.GOLD_SCHEMA
+        self.ml_asset_schema = self.config.general.ML_ASSET_SCHEMA
 
         # Define the feature table name and feature function name
         self.feature_table_name = f"{self.catalog_name}.{self.gold_schema}.{self.config.general.FEATURE_TABLE_NAME}"
@@ -234,24 +234,6 @@ class FeatureLookUpModel:
 
             # Infer signature
             signature = infer_signature(self.X_train, y_pred)
-            # Signature
-            input_schema = Schema(
-                [
-                    ColSpec("long", "minimum_nights"),
-                    ColSpec("double", "latitude"),
-                    ColSpec("double", "longitude"),
-                    ColSpec("double", "estimated_listed_months"),
-                    ColSpec("long", "availability_365"),
-                    ColSpec("long", "number_of_reviews"),
-                    ColSpec("long", "calculated_host_listings_count"),
-                    ColSpec("boolean", "is_manhattan"),
-                    ColSpec("string", "neighbourhood"),
-                    ColSpec("string", "room_type"),
-                    ColSpec("double", "days_since_last_review"),
-                ]
-            )
-            output_schema = Schema([ColSpec("double")])
-            signature = ModelSignature(inputs=input_schema, outputs=output_schema)
 
             # Log model with feature engineering client
             self.fe.log_model(
@@ -266,7 +248,7 @@ class FeatureLookUpModel:
         """Register the model in the model registry"""
         registered_model = mlflow.register_model(
             model_uri=f"runs:/{self.run_id}/lightgbm-pipeline-model-fe",
-            name=f"{self.catalog}.{self.schema_name}.{self.config.model.MODEL_NAME}",
+            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}",
             tags=self.tags,
         )
 
@@ -276,7 +258,7 @@ class FeatureLookUpModel:
         client = MlflowClient()
         # Set alias for the model version
         client.set_registered_model_alias(
-            name=f"{self.catalog_name}.{self.schema_name}.{self.config.model.MODEL_NAME}",
+            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}",
             alias="latest-model",
             version=latest_version,
         )
@@ -284,7 +266,7 @@ class FeatureLookUpModel:
     def load_latest_model_and_predict(self, X):
         """Load the latest model and make predictions"""
         # Load the latest model version from MLFlow using Feature Engineering client
-        model_uri = f"models:/{self.catalog_name}.{self.schema_name}.{self.config.model.MODEL_NAME}@latest-model"
+        model_uri = f"models:/{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}@latest-model"
 
         # Make predictions
         predictions = self.fe.score_batch(model_uri=model_uri, df=X)

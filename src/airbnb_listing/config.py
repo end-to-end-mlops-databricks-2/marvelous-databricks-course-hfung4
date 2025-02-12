@@ -26,8 +26,9 @@ class GeneralConfig(BaseModel):
     BRONZE_SCHEMA: str
     SILVER_SCHEMA: str
     GOLD_SCHEMA: str
+    ML_ASSET_SCHEMA: str
     FEATURE_TABLE_NAME: str
-    EXPERIMENT_NAME_FE: Optional[str]  # can be str or None
+    EXPERIMENT_NAME_FE: Optional[str]
 
 
 class ModelConfig(BaseModel):
