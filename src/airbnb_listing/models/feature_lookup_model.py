@@ -7,8 +7,9 @@ from databricks.connect import DatabricksSession
 from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from databricks.sdk import WorkspaceClient
 from lightgbm import LGBMRegressor
-from mlflow.models import infer_signature
+from mlflow.models import ModelSignature, infer_signature
 from mlflow.tracking import MlflowClient
+from mlflow.types.schema import ColSpec, Schema
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -233,6 +234,24 @@ class FeatureLookUpModel:
 
             # Infer signature
             signature = infer_signature(self.X_train, y_pred)
+            # Signature
+            input_schema = Schema(
+                [
+                    ColSpec("long", "minimum_nights"),
+                    ColSpec("double", "latitude"),
+                    ColSpec("double", "longitude"),
+                    ColSpec("double", "estimated_listed_months"),
+                    ColSpec("long", "availability_365"),
+                    ColSpec("long", "number_of_reviews"),
+                    ColSpec("long", "calculated_host_listings_count"),
+                    ColSpec("boolean", "is_manhattan"),
+                    ColSpec("string", "neighbourhood"),
+                    ColSpec("string", "room_type"),
+                    ColSpec("double", "days_since_last_review"),
+                ]
+            )
+            output_schema = Schema([ColSpec("double")])
+            signature = ModelSignature(inputs=input_schema, outputs=output_schema)
 
             # Log model with feature engineering client
             self.fe.log_model(
@@ -257,7 +276,7 @@ class FeatureLookUpModel:
         client = MlflowClient()
         # Set alias for the model version
         client.set_registered_model_alias(
-            name=f"{self.catalog}.{self.schema_name}.{self.config.model.MODEL_NAME}",
+            name=f"{self.catalog_name}.{self.schema_name}.{self.config.model.MODEL_NAME}",
             alias="latest-model",
             version=latest_version,
         )
