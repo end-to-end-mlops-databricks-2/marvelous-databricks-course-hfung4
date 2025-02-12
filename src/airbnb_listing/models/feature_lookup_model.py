@@ -1,10 +1,18 @@
 from datetime import datetime
 
+import mlflow
 import pandas as pd
 from databricks import feature_engineering
 from databricks.connect import DatabricksSession
 from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from databricks.sdk import WorkspaceClient
+from lightgbm import LGBMRegressor
+from mlflow.models import infer_signature
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from airbnb_listing.config import Config, Tags
 from airbnb_listing.logging import logger
@@ -159,3 +167,77 @@ class FeatureLookUpModel:
         self.y_test = self.test_set[self.target]
 
         logger.info("✅ Feature engineering completed.")
+
+    def train(self):
+        """Train the model"""
+        logger.info("Training the model...")
+
+        # Define the preprocessor step
+        cat_pipeline = Pipeline(
+            [
+                (
+                    "cat_imputer",
+                    SimpleImputer(strategy="most_frequent", missing_values=None),
+                ),
+                ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+            ]
+        )
+
+        num_pipeline = Pipeline(
+            [
+                ("num_imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler()),
+            ]
+        )
+
+        preprocessor = ColumnTransformer(
+            [
+                ("num", num_pipeline, self.num_features),
+                ("cat", cat_pipeline, self.cat_features),
+            ],
+            remainder="passthrough",
+        )
+
+        # Define the final pipeline
+        pipeline = Pipeline(
+            steps=[
+                ("preprocessor", preprocessor),
+                ("regressor", LGBMRegressor(**self.parameters)),
+            ]
+        )
+
+        # Train model and log metrics, parameters, and model
+        mlflow.set_experiment(self.experiment_name)
+
+        with mlflow.start_run(tags=self.tags) as run:
+            self.run_id = run.info.run_id
+            pipeline.fit(self.X_train, self.y_train)
+            y_pred = pipeline.predict(self.X_test)
+
+            # Compute evaluation metrics
+            mse = mean_squared_error(self.y_test, y_pred)
+            mae = mean_absolute_error(self.y_test, y_pred)
+
+            # Log metrics with logger
+            logger.info(f"Mean Squared Error: {mse}")
+            logger.info(f"Mean Absolute Error: {mae}")
+
+            # Log metrics in mlflow
+            mlflow.log_metric("mse", mse)
+            mlflow.log_metric("mae", mae)
+
+            # Log parameters in mlflow
+            mlflow.log_param("model_type", "LGBMRegressor with preprocessing step")
+            mlflow.log_params(self.parameters)
+
+            # Infer signature
+            signature = infer_signature(self.X_train, y_pred)
+
+            # Log model with feature engineering client
+            self.fe.log_model(
+                model=pipeline,
+                flavor=mlflow.sklearn,
+                artifact_path="lightgbm-pipeline-model-fe",
+                training_set=self.training_set_spec,
+                signature=signature,
+            )
