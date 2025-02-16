@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import numpy as np
 import pandas as pd
 from databricks.connect import DatabricksSession
@@ -16,7 +14,7 @@ class DataProcessor:
         self.df = pandas_df  # Store the DataFrame as self.df
         # self.config = config  # Store the configuration
 
-    def preprocess(self):
+    def preprocess(self) -> pd.DataFrame:
         """Preprocess the data and perform feature engineering
 
         Returns:
@@ -26,8 +24,11 @@ class DataProcessor:
         self.df.dropna(subset=["price"], inplace=True)
 
         # Convert certain float columns to Int64 (pandas nullable integer type)
-        for col in config.model.INTEGER_COLUMNS:
-            self.df[col] = self.df[col].astype("Int64")  # Nullable integer
+        # for col in config.model.INTEGER_COLUMNS:
+        #    self.df[col] = self.df[col].astype("Int64")  # Nullable integer
+
+        # Convert the id column to a string
+        self.df[config.model.ID_COLUMN] = self.df[config.model.ID_COLUMN].astype(str)
 
         # Log the price
         self.df["log_price"] = np.log1p(self.df["price"])
@@ -43,7 +44,10 @@ class DataProcessor:
 
         # elapse time since last review
         self.df["last_review"] = pd.to_datetime(self.df["last_review"], format="%Y-%m-%d", errors="coerce")
-        self.df["days_since_last_review"] = (datetime.now() - self.df["last_review"]).dt.days
+        # NOTE: days_since_last_review is now created with feature function
+        # self.df["days_since_last_review"] = (
+        #    datetime.now() - self.df["last_review"]
+        # ).dt.days
 
         # Estimate for how long a house has been listed.
         # This duration is calculated by dividing the total number of reviews
@@ -67,7 +71,7 @@ class DataProcessor:
             [config.model.ID_COLUMN]
             + config.model.SELECTED_CATEGORICAL_FEATURES
             + config.model.SELECTED_NUMERIC_FEATURES
-            + config.model.SELECTED_TEXT_FEATURES
+            + config.model.SELECTED_TIMESTAMP_FEATURES
             + [config.model.TARGET]
         )
         self.df = self.df.loc[:, selected_columns]
