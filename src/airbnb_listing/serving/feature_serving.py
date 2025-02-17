@@ -51,14 +51,13 @@ class FeatureServing:
                 table_name=self.feature_table_name,
                 lookup_key=config.model.ID_COLUMN,
                 feature_names=[
-                    "longitude",
                     "latitude",
-                    "is_manhattan",
+                    "longitude",
                     "predicted_listing_price",
                 ],
             )
         ]
-        self.fe.create_feature_spec(name=self.feature_spec_name, features=features, exclude_columns=None)
+        self.fe.create_feature_spec(name=self.feature_spec_name, features=features)
 
     def deploy_or_update_serving_endpoint(self, workload_size: str = "Small", scale_to_zero: bool = True):
         """Deploys the feature serving endpoint in Databricks
@@ -68,14 +67,14 @@ class FeatureServing:
             scale_to_zero (bool, optional): Scale to zero option. Defaults to True.
         """
         # True if the endpoint already exists
-        endpoint_exists = any(item.name == self.endpoint_name for item in self.worksapce.serving_endpoints.list())
+        endpoint_exists = any(item.name == self.endpoint_name for item in self.workspace.serving_endpoints.list())
 
         # A list of served entities behind the endpoint, we will serve a feature spec for this endpoint
         served_entities = [
             ServedEntityInput(
                 # Serve the feature spec we created
                 entity_name=self.feature_spec_name,
-                scale_to_zero_eanbled=scale_to_zero,
+                scale_to_zero_enabled=scale_to_zero,
                 workload_size=workload_size,
             )
         ]
