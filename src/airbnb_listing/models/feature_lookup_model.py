@@ -104,7 +104,7 @@ class FeatureLookUpModel:
         LANGUAGE PYTHON AS
         $$
         from datetime import datetime, timezone
-        last_review = last_review.cast('timestamp')
+        last_review = datetime.strptime(last_review, '%Y-%m-%d %H:%M:%S')
         if last_review is None:
             return None
         else:
