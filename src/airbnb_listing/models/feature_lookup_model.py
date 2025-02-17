@@ -104,10 +104,10 @@ class FeatureLookUpModel:
         LANGUAGE PYTHON AS
         $$
         from datetime import datetime, timezone
-        last_review = datetime.strptime(last_review, '%Y-%m-%d %H:%M:%S')
         if last_review is None:
             return None
         else:
+            last_review = datetime.strptime(last_review, '%Y-%m-%d %H:%M:%S')
             return (datetime.now(timezone.utc) - last_review).total_seconds() / 86400
         $$
         """
