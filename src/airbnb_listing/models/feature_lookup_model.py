@@ -107,7 +107,7 @@ class FeatureLookUpModel:
         if last_review is None:
             return None
         else:
-            last_review = datetime.strptime(last_review, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+            last_review = datetime.strptime(last_review, '%Y-%m-%d').replace(tzinfo=timezone.utc)
             return (datetime.now(timezone.utc) - last_review).total_seconds() / 86400
         $$
         """
@@ -158,9 +158,7 @@ class FeatureLookUpModel:
 
         # Create the days_since_last_review feature for the test set that is used
         # to evaluate the trained model
-        self.test_set["last_review"] = pd.to_datetime(
-            self.test_set["last_review"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
-        )
+        self.test_set["last_review"] = pd.to_datetime(self.test_set["last_review"], format="%Y-%m-%d", errors="coerce")
         self.test_set["days_since_last_review"] = self.test_set["last_review"].apply(
             lambda x: (datetime.now() - x).days if pd.notna(x) else None
         )
