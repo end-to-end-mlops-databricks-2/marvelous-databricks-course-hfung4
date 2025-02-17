@@ -1,6 +1,7 @@
 from databricks import feature_engineering
 from databricks.feature_engineering import FeatureLookup
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.errors import NotFound
 from databricks.sdk.service.catalog import (
     OnlineTableSpec,
     OnlineTableSpecTriggeredSchedulingPolicy,
@@ -8,6 +9,7 @@ from databricks.sdk.service.catalog import (
 from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
 
 from airbnb_listing.config import config
+from airbnb_listing.logging import logger
 
 
 # Feature Serving Manager
@@ -21,7 +23,7 @@ class FeatureServing:
             endpoint_name (str): user specifed name of the endpoint
         """
         self.feature_table_name = feature_table_name
-        self.workspace = WorkspaceClient
+        self.workspace = WorkspaceClient()
         self.feature_spec_name = feature_spec_name
         self.endpoint_name = endpoint_name
         self.online_table_name = f"{self.feature_table_name}_online"
@@ -35,7 +37,12 @@ class FeatureServing:
             run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
             perform_full_copy=False,
         )
-        self.workspace.online_tables.create(name=self.online_table_name, spec=spec)
+        try:
+            self.workspace.online_tables.get(name=self.online_table_name)
+            logger.info(f"Online table {self.online_table_name} already exists.")
+        except NotFound:
+            self.workspace.online_tables.create(name=self.online_table_name, spec=spec)
+            logger.info(f"Online table {self.online_table_name} created.")
 
     def create_feature_spec(self):
         """Create a feature spec to be served with Feature Serving"""

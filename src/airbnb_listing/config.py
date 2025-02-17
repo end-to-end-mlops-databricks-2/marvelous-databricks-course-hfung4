@@ -14,6 +14,7 @@ ROOT = PACKAGE_ROOT.parent.parent  # repo root
 LOGS_DIR = Path(ROOT / "logs")
 TESTS_DIR = Path(ROOT / "tests")
 CONFIG_FILE_PATH = ROOT / "project_config.yml"
+ENV_DIR = Path(ROOT / ".env")
 
 
 # Pydantic model for project configuration
