@@ -107,7 +107,7 @@ class FeatureLookUpModel:
         if last_review is None:
             return None
         else:
-            last_review = datetime.strptime(last_review, '%Y-%m-%d %H:%M:%S')
+            last_review = datetime.strptime(last_review, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
             return (datetime.now(timezone.utc) - last_review).total_seconds() / 86400
         $$
         """
