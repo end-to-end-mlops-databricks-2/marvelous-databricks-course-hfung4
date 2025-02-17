@@ -104,7 +104,7 @@ class FeatureLookUpModel:
         LANGUAGE PYTHON AS
         $$
         from datetime import datetime, timezone
-        if last_review is None:
+        if last_review is None or last_review=='NA':
             return None
         else:
             last_review = datetime.strptime(last_review, '%Y-%m-%d').replace(tzinfo=timezone.utc)
