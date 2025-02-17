@@ -29,6 +29,7 @@ class GeneralConfig(BaseModel):
     ML_ASSET_SCHEMA: str
     FEATURE_TABLE_NAME: str
     EXPERIMENT_NAME_FE: Optional[str]
+    EXPERIMENT_NAME_BASIC: Optional[str]
 
 
 class ModelConfig(BaseModel):

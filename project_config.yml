@@ -16,8 +16,8 @@ ML_ASSET_SCHEMA: airbnb_listing_ml_assets
 FEATURE_TABLE_NAME: airbnb_price_listing_features
 
 # Experiment name
+EXPERIMENT_NAME_BASIC: /Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/airbnb_price_listing_basic
 EXPERIMENT_NAME_FE: /Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/airbnb_price_listing_fe
-
 
 # Model configuration ------------------------------------------------------------------------
 MODEL_NAME: airbnb_price_listing
