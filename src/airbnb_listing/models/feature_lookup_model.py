@@ -248,7 +248,7 @@ class FeatureLookUpModel:
         """Register the model in the model registry"""
         registered_model = mlflow.register_model(
             model_uri=f"runs:/{self.run_id}/lightgbm-pipeline-model-fe",
-            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}",
+            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}_fe",
             tags=self.tags,
         )
 
@@ -258,7 +258,7 @@ class FeatureLookUpModel:
         client = MlflowClient()
         # Set alias for the model version
         client.set_registered_model_alias(
-            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}",
+            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}_fe",
             alias="latest-model",
             version=latest_version,
         )
@@ -266,7 +266,7 @@ class FeatureLookUpModel:
     def load_latest_model_and_predict(self, X):
         """Load the latest model and make predictions"""
         # Load the latest model version from MLFlow using Feature Engineering client
-        model_uri = f"models:/{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}@latest-model"
+        model_uri = f"models:/{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}_fe@latest-model"
 
         # Make predictions
         predictions = self.fe.score_batch(model_uri=model_uri, df=X)

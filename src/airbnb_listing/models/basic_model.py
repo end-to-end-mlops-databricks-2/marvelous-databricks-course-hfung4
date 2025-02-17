@@ -37,7 +37,7 @@ class BasicModel:
 
         # Mlflow configuration
         self.experiment_name = self.config.general.EXPERIMENT_NAME_BASIC
-        self.model_name = f"{self.catalog_name}.{self.ml_asset_schema}.house_prices_model_basic"
+        self.model_name = f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}_basic"
         # self.tags = tags.model_dump()
         self.tags = tags.dict()
 

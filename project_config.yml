@@ -20,7 +20,7 @@ EXPERIMENT_NAME_BASIC: /Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicr
 EXPERIMENT_NAME_FE: /Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/airbnb_price_listing_fe
 
 # Model configuration ------------------------------------------------------------------------
-MODEL_NAME: airbnb_price_listing
+MODEL_NAME: airbnb_listing_price_model
 TARGET: log_price
 ID_COLUMN: id
 
