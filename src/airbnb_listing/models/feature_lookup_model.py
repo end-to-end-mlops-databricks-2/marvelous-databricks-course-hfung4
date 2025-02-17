@@ -99,11 +99,12 @@ class FeatureLookUpModel:
     def create_feature_function(self):
         """Define a function to compute date since last review"""
         query = f"""
-        CREATE OR REPLACE FUNCTION {self.function_name}(last_review TIMESTAMP)
+        CREATE OR REPLACE FUNCTION {self.function_name}(last_review STRING)
         RETURNS DOUBLE
         LANGUAGE PYTHON AS
         $$
         from datetime import datetime, timezone
+        last_review = last_review.cast('timestamp')
         if last_review is None:
             return None
         else:
@@ -118,7 +119,7 @@ class FeatureLookUpModel:
         self.train_set = self.spark.table(f"{self.catalog_name}.{self.silver_schema}.airbnb_listing_price_train").drop(
             "latitude", "longitude", "is_manhattan"
         )
-        self.train_set = self.train_set.withColumn("last_review", self.train_set["last_review"].cast("timestamp"))
+        self.train_set = self.train_set.withColumn("last_review", self.train_set["last_review"].cast("string"))
 
         # Since I need the test set to evaluate the trained model and compute performance metrics, I need
         # all features (including the ones that will be retrieved from the feature table)
