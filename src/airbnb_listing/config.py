@@ -14,6 +14,7 @@ ROOT = PACKAGE_ROOT.parent.parent  # repo root
 LOGS_DIR = Path(ROOT / "logs")
 TESTS_DIR = Path(ROOT / "tests")
 CONFIG_FILE_PATH = ROOT / "project_config.yml"
+ENV_DIR = Path(ROOT / ".env")
 
 
 # Pydantic model for project configuration
@@ -29,6 +30,7 @@ class GeneralConfig(BaseModel):
     ML_ASSET_SCHEMA: str
     FEATURE_TABLE_NAME: str
     EXPERIMENT_NAME_FE: Optional[str]
+    EXPERIMENT_NAME_BASIC: Optional[str]
 
 
 class ModelConfig(BaseModel):

@@ -43,7 +43,7 @@ class DataProcessor:
         self.df["minimum_nights"] = self.df["minimum_nights"].clip(upper=14)
 
         # elapse time since last review
-        self.df["last_review"] = pd.to_datetime(self.df["last_review"], format="%Y-%m-%d", errors="coerce")
+        # self.df["last_review"] = pd.to_datetime(self.df["last_review"], format="%Y-%m-%d", errors="coerce")
         # NOTE: days_since_last_review is now created with feature function
         # self.df["days_since_last_review"] = (
         #    datetime.now() - self.df["last_review"]

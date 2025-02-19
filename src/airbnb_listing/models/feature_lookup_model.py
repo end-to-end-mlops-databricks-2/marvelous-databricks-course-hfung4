@@ -99,14 +99,15 @@ class FeatureLookUpModel:
     def create_feature_function(self):
         """Define a function to compute date since last review"""
         query = f"""
-        CREATE OR REPLACE FUNCTION {self.function_name}(last_review TIMESTAMP)
+        CREATE OR REPLACE FUNCTION {self.function_name}(last_review STRING)
         RETURNS DOUBLE
         LANGUAGE PYTHON AS
         $$
         from datetime import datetime, timezone
-        if last_review is None:
+        if last_review is None or last_review=='NA':
             return None
         else:
+            last_review = datetime.strptime(last_review, '%Y-%m-%d').replace(tzinfo=timezone.utc)
             return (datetime.now(timezone.utc) - last_review).total_seconds() / 86400
         $$
         """
@@ -118,7 +119,7 @@ class FeatureLookUpModel:
         self.train_set = self.spark.table(f"{self.catalog_name}.{self.silver_schema}.airbnb_listing_price_train").drop(
             "latitude", "longitude", "is_manhattan"
         )
-        self.train_set = self.train_set.withColumn("last_review", self.train_set["last_review"].cast("timestamp"))
+        self.train_set = self.train_set.withColumn("last_review", self.train_set["last_review"].cast("string"))
 
         # Since I need the test set to evaluate the trained model and compute performance metrics, I need
         # all features (including the ones that will be retrieved from the feature table)
@@ -157,6 +158,7 @@ class FeatureLookUpModel:
 
         # Create the days_since_last_review feature for the test set that is used
         # to evaluate the trained model
+        self.test_set["last_review"] = pd.to_datetime(self.test_set["last_review"], format="%Y-%m-%d", errors="coerce")
         self.test_set["days_since_last_review"] = self.test_set["last_review"].apply(
             lambda x: (datetime.now() - x).days if pd.notna(x) else None
         )
@@ -248,7 +250,7 @@ class FeatureLookUpModel:
         """Register the model in the model registry"""
         registered_model = mlflow.register_model(
             model_uri=f"runs:/{self.run_id}/lightgbm-pipeline-model-fe",
-            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}",
+            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}_fe",
             tags=self.tags,
         )
 
@@ -258,7 +260,7 @@ class FeatureLookUpModel:
         client = MlflowClient()
         # Set alias for the model version
         client.set_registered_model_alias(
-            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}",
+            name=f"{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}_fe",
             alias="latest-model",
             version=latest_version,
         )
@@ -266,7 +268,7 @@ class FeatureLookUpModel:
     def load_latest_model_and_predict(self, X):
         """Load the latest model and make predictions"""
         # Load the latest model version from MLFlow using Feature Engineering client
-        model_uri = f"models:/{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}@latest-model"
+        model_uri = f"models:/{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}_fe@latest-model"
 
         # Make predictions
         predictions = self.fe.score_batch(model_uri=model_uri, df=X)

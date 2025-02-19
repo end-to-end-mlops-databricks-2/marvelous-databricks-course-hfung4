@@ -10,7 +10,7 @@ mlflow.set_registry_uri("databricks-uc")
 spark = DatabricksSession.builder.getOrCreate()
 
 # raw tags
-tags_dict = {"git_sha": "abcd12345", "branch": "week2"}
+tags_dict = {"git_sha": "abcd12345", "branch": "week3"}
 # validated tags
 tags = Tags(**tags_dict)
 

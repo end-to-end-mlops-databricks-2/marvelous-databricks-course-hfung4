@@ -13,14 +13,13 @@ GOLD_SCHEMA: gold
 ML_ASSET_SCHEMA: airbnb_listing_ml_assets
 
 # Feature table name
-FEATURE_TABLE_NAME: airbnb_price_listing_features
-
+FEATURE_TABLE_NAME: airbnb_listing_price_features
 # Experiment name
-EXPERIMENT_NAME_FE: /Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/airbnb_price_listing_fe
-
+EXPERIMENT_NAME_BASIC: /Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/airbnb_listing_price_basic
+EXPERIMENT_NAME_FE: /Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/airbnb_listing_price_fe
 
 # Model configuration ------------------------------------------------------------------------
-MODEL_NAME: airbnb_price_listing
+MODEL_NAME: airbnb_listing_price_model
 TARGET: log_price
 ID_COLUMN: id
 
