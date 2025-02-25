@@ -2,6 +2,7 @@
 RANDOM_STATE: 42
 RUN_ON_DATABRICKS_WORKSPACE: False
 env: dev
+GENERATE_AND_APPEND_SYN_DATA: True
 
 # Data and schemas
 DEV_CATALOG: dev

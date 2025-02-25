@@ -21,6 +21,7 @@ ENV_DIR = Path(ROOT / ".env")
 class GeneralConfig(BaseModel):
     RANDOM_STATE: int
     RUN_ON_DATABRICKS_WORKSPACE: bool
+    GENERATE_AND_APPEND_SYN_DATA: bool
     DEV_CATALOG: str
     STAGING_CATALOG: str
     PROD_CATALOG: str
