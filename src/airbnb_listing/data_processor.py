@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pandas as pd
 from databricks.connect import DatabricksSession
@@ -91,7 +93,13 @@ class DataProcessor:
         )
 
         # Write table to Unity Catalog
-        processed_spark.write.mode("append").saveAsTable(table_name)
+
+        if config.general.GENERATE_AND_APPEND_SYN_DATA:
+            # Append synthetic data to the existing table
+            processed_spark.write.mode("append").saveAsTable(table_name)
+        else:
+            # Reading and processing bronze data for the first time
+            processed_spark.write.mode("overwrite").saveAsTable(table_name)
 
         # Modify a Delta table property to enable Change Data Feed (CDF)
         # CDF allows tracking row-level changes (INSERT, UPDATE, DELETE) in Delta Tables.
@@ -100,3 +108,73 @@ class DataProcessor:
         spark.sql(f"ALTER TABLE {table_name} " "SET TBLPROPERTIES (delta.enableChangeDataFeed = true);")
 
         logger.info(f"Data written to {table_name} in Unity Catalog.")
+
+
+def generate_synthetic_data(df, num_rows=10):
+    """Generate synthetic data based on the distribution of the input DataFrame.
+
+    Args:
+        df (pd.DataFrame): input DataFrame
+        num_rows (int): number of rows to generate
+
+    Returns:
+        pd.DataFrame: synthetic DataFrame
+    """
+    synthetic_data = pd.DataFrame()
+
+    numeric_treat_as_objects = ["host_id", "latitude", "longitude"]
+    round_to_nearest_whole_num = [
+        "price",
+        "minimum_nights",
+        "number_of_reviews",
+        "calculated_host_listings_count",
+    ]
+
+    for column in df.columns:
+        # Skip the id column
+        if column == config.model.ID_COLUMN:
+            continue
+
+        # Handling numeric data
+        if pd.api.types.is_numeric_dtype(df[column]) and column not in numeric_treat_as_objects:
+            # Generate synthetic data based on the distribution of the input data
+            synthetic_data[column] = np.random.normal(df[column].mean(), df[column].std(), num_rows)
+            # Ensure the generated data is non-negative
+            synthetic_data[column] = synthetic_data[column].abs()
+
+        # Handling categorical data
+        elif pd.api.types.is_object_dtype(df[column]) or column in numeric_treat_as_objects:
+            value_counts = df[column].value_counts(normalize=True)
+            unique_values = value_counts.index.astype(str)
+            probabilities = value_counts.values
+            synthetic_data[column] = np.random.choice(unique_values, num_rows, p=probabilities)
+
+    # Handle Latitude & Longitude Sampling from the Same Neighbourhood
+    if {"neighbourhood", "latitude", "longitude"}.issubset(df.columns):
+        synthetic_data["latitude"] = np.nan
+        synthetic_data["longitude"] = np.nan
+
+        for i in range(num_rows):
+            neighbourhood = synthetic_data.loc[i, "neighbourhood"]
+            if pd.notna(neighbourhood) and neighbourhood in df["neighbourhood"].values:
+                subset = df[df["neighbourhood"] == neighbourhood]
+                if not subset.empty:
+                    sampled_row = subset.sample(n=1)
+                    synthetic_data.at[i, "latitude"] = sampled_row["latitude"].values[0]
+                    synthetic_data.at[i, "longitude"] = sampled_row["longitude"].values[0]
+    # Round certain float columns to integers
+    synthetic_data[round_to_nearest_whole_num] = synthetic_data[round_to_nearest_whole_num].round(0)
+
+    # Generate id
+    timestamp_base = int(time.time() * 1000)
+    synthetic_data[config.model.ID_COLUMN] = [str(timestamp_base + i) for i in range(num_rows)]
+
+    # Reorder columns to match the input DataFrame ordering
+    ordered_columns = [col for col in df.columns if col in synthetic_data.columns]
+    synthetic_data = synthetic_data[ordered_columns]
+
+    # Cast host_id to float and id to int32
+    synthetic_data["host_id"] = synthetic_data["host_id"].astype(float)
+    synthetic_data["id"] = synthetic_data["id"].astype("int32")
+
+    return synthetic_data
