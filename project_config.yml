@@ -2,7 +2,7 @@
 RANDOM_STATE: 42
 RUN_ON_DATABRICKS_WORKSPACE: False
 env: dev
-GENERATE_AND_APPEND_SYN_DATA: True
+GENERATE_AND_APPEND_SYN_DATA: False
 
 # Data and schemas
 DEV_CATALOG: dev
@@ -12,6 +12,11 @@ BRONZE_SCHEMA: bronze
 SILVER_SCHEMA: silver
 GOLD_SCHEMA: gold
 ML_ASSET_SCHEMA: airbnb_listing_ml_assets
+
+# Pipeline id (from online table Overview page in Catalog Explorer)
+DEV_PIPELINE_ID: 52a023c4-9b0e-4bb8-a8e0-6ebc079651d5
+STAGING_PIPELINE_ID: 52a023c4-9b0e-4bb8-a8e0-6ebc079651d5
+PROD_PIPELINE_ID: 52a023c4-9b0e-4bb8-a8e0-6ebc079651d5
 
 # Feature table name
 FEATURE_TABLE_NAME: airbnb_listing_price_features
