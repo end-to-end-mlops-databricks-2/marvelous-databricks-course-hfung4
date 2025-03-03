@@ -2,6 +2,7 @@ from datetime import datetime
 
 import mlflow
 import pandas as pd
+import pyspark.sql.functions as F
 from databricks import feature_engineering
 from databricks.connect import DatabricksSession
 from databricks.feature_engineering import FeatureFunction, FeatureLookup
@@ -9,6 +10,7 @@ from databricks.sdk import WorkspaceClient
 from lightgbm import LGBMRegressor
 from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
+from pyspark.sql import DataFrame
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -16,22 +18,25 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from airbnb_listing.config import Config, Tags
+from airbnb_listing.data_manager import get_env_catalog
 from airbnb_listing.logging import logger
 
 
 # Feature Lookup Model
 class FeatureLookUpModel:
-    def __init__(self, config: Config, tags: Tags, spark: DatabricksSession):
+    def __init__(self, config: Config, tags: Tags, spark: DatabricksSession, env: str):
         """initialize the FeatureLookUpModel class
 
         Args:
             config (Config): configuration object
             tags (Tags): tag object
             spark (DatabricksSession): spark session
+            env (str): target environment
         """
         self.config = config
         self.tags = tags
         self.spark = spark
+        self.env = env
         self.workspace = WorkspaceClient()
         self.fe = feature_engineering.FeatureEngineeringClient()
 
@@ -41,9 +46,7 @@ class FeatureLookUpModel:
         self.ID_COLUMN = self.config.model.ID_COLUMN
         self.target = self.config.model.TARGET
         self.parameters = self.config.model.MODEL_PARAMS
-        self.catalog_name = (
-            self.config.general.DEV_CATALOG
-        )  # hardcoded for now, later it will be dependent on the target environment
+        self.catalog_name = get_env_catalog(self.env)
         self.silver_schema = self.config.general.SILVER_SCHEMA
         self.gold_schema = self.config.general.GOLD_SCHEMA
         self.ml_asset_schema = self.config.general.ML_ASSET_SCHEMA
@@ -94,6 +97,38 @@ class FeatureLookUpModel:
         self.spark.sql(query)
 
         logger.info("✅ Feature table created and populated.")
+
+    def update_feature_table(self):
+        """
+        Updates the feature table with the latest records from train and test sets.
+        """
+        queries = [
+            f"""
+            WITH max_timestamp AS (
+                SELECT MAX(update_timestamp_utc) AS max_update_timestamp
+                FROM {self.catalog_name}.{self.silver_schema}.airbnb_listing_price_train
+            )
+            INSERT INTO {self.feature_table_name}
+            SELECT {self.ID_COLUMN}, latitude, longitude, is_manhattan
+            FROM {self.catalog_name}.{self.silver_schema}.airbnb_listing_price_train
+            WHERE update_timestamp_utc == (SELECT max_update_timestamp FROM max_timestamp)
+            """,
+            f"""
+            WITH max_timestamp AS (
+                SELECT MAX(update_timestamp_utc) AS max_update_timestamp
+                FROM {self.catalog_name}.{self.silver_schema}.airbnb_listing_price_test
+            )
+            INSERT INTO {self.feature_table_name}
+            SELECT {self.ID_COLUMN}, latitude, longitude, is_manhattan
+            FROM {self.catalog_name}.{self.silver_schema}.airbnb_listing_price_test
+            WHERE update_timestamp_utc == (SELECT max_update_timestamp FROM max_timestamp)
+            """,
+        ]
+
+        for query in queries:
+            logger.info("Executing SQL update query...")
+            self.spark.sql(query)
+        logger.info("Feature table updated successfully.")
 
     # Feature function definition
     def create_feature_function(self):
@@ -265,6 +300,9 @@ class FeatureLookUpModel:
             version=latest_version,
         )
 
+        # Return the latest version (integer) of the model
+        return latest_version
+
     def load_latest_model_and_predict(self, X):
         """Load the latest model and make predictions"""
         # Load the latest model version from MLFlow using Feature Engineering client
@@ -273,3 +311,61 @@ class FeatureLookUpModel:
         # Make predictions
         predictions = self.fe.score_batch(model_uri=model_uri, df=X)
         return predictions
+
+    def model_improved(self, test_set: DataFrame):
+        """Evaluate the model performance on the test set.
+
+        Args:
+            test_set (DataFrame): test dataset
+
+        Returns:
+            bool: True if the new model performs better, False otherwise
+        """
+        X_test = test_set.drop(self.config.model.TARGET)
+
+        # Load the latest reigstered model (the champion behind the serving endpoint), and make predictions
+        predictions_latest = self.load_latest_model_and_predict(X_test).withColumnRenamed(
+            "prediction", "prediction_latest"
+        )
+
+        # Load the current/newest model that I just trained,
+        # without the latest tag (NOT yet registered), and make predictions
+        current_model_uri = f"runs:/{self.run_id}/lightgbm-pipeline-model-fe"
+        predictions_current = self.fe.score_batch(model_uri=current_model_uri, df=X_test).withColumnRenamed(
+            "prediction", "prediction_current"
+        )
+
+        logger.info("Predictions are ready.")
+
+        # Get the id and label of the test set
+        test_set = test_set.select(self.config.model.ID_COLUMN, self.config.model.TARGET)
+
+        # Join the DataFrames on the 'id' column
+        df = test_set.join(predictions_current, on=self.config.model.ID_COLUMN).join(
+            predictions_latest, on=self.config.model.ID_COLUMN
+        )
+
+        # Calculate the absolute error for each model
+        df = df.withColumn(
+            "error_current",
+            F.abs(df[self.config.model.TARGET] - df["prediction_current"]),
+        )
+        df = df.withColumn(
+            "error_latest",
+            F.abs(df[self.config.model.TARGET] - df["prediction_latest"]),
+        )
+
+        # Calculate the Mean Absolute Error (MAE) for each model
+        mae_current = df.agg(F.mean("error_current")).collect()[0][0]
+        mae_latest = df.agg(F.mean("error_latest")).collect()[0][0]
+
+        # Compare models based on MAE
+        logger.info(f"MAE for Current Model: {mae_current}")
+        logger.info(f"MAE for Latest Model: {mae_latest}")
+
+        if mae_current < mae_latest:
+            logger.info("Current Model performs better. Registering new model.")
+            return True
+        else:
+            logger.info("New Model performs worse. Keeping the old model.")
+            return False

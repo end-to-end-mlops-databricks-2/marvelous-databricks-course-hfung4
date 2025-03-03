@@ -1,3 +1,5 @@
+import time
+
 import mlflow
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors import NotFound
@@ -40,6 +42,35 @@ class FeatureLookupServing:
         except NotFound:
             self.workspace.online_tables.create(name=self.online_table_name, spec=spec)
             logger.info(f"Online table {self.online_table_name} created.")
+
+    def update_online_table(self, pipeline_id: str):
+        """Triggers a Databricks pipeline update and monitors its state.
+
+        Args:
+            pipeline_id (str): Pipeline id of the DLT pipeline that is used to update the online table
+        """
+        # Since the (offline) feature table is updated, we need to update the online table also
+        # we will trigger the DLT pipeline to update the online tabe
+        update_response = self.workspace.pipelines.start_update(pipeline_id=pipeline_id, full_refresh=False)
+
+        while True:
+            update_info = self.workspace.pipelines.get_update(
+                pipeline_id=pipeline_id, update_id=update_response.update_id
+            )
+            # Get the state of the pipeline update
+            state = update_info.update.state.value
+
+            if state == "COMPLETED":
+                logger.info("Pipline update completed successfully.")
+                break
+            elif state in ["FAILED", "CANCELED"]:
+                logger.error("Pipeline update failed.")
+                raise SystemError("Online table failed to update.")
+            elif state == "WAITING_FOR_RESOURCES":
+                logger.warning("Pipeline update is waiting for resources.")
+            else:
+                logger.info(f"Pipeline update state: {state}")
+            time.sleep(30)
 
     def get_latest_model_version(self):
         """Gets the latest version of the model."""

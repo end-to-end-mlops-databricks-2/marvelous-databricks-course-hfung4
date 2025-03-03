@@ -21,6 +21,7 @@ ENV_DIR = Path(ROOT / ".env")
 class GeneralConfig(BaseModel):
     RANDOM_STATE: int
     RUN_ON_DATABRICKS_WORKSPACE: bool
+    GENERATE_AND_APPEND_SYN_DATA: bool
     DEV_CATALOG: str
     STAGING_CATALOG: str
     PROD_CATALOG: str
@@ -28,6 +29,9 @@ class GeneralConfig(BaseModel):
     SILVER_SCHEMA: str
     GOLD_SCHEMA: str
     ML_ASSET_SCHEMA: str
+    DEV_PIPELINE_ID: str
+    STAGING_PIPELINE_ID: str
+    PROD_PIPELINE_ID: str
     FEATURE_TABLE_NAME: str
     EXPERIMENT_NAME_FE: Optional[str]
     EXPERIMENT_NAME_BASIC: Optional[str]
@@ -119,3 +123,4 @@ config = create_and_validate_config()
 class Tags(BaseModel):
     git_sha: str
     branch: str
+    job_run_id: str
