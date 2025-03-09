@@ -39,7 +39,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where =["src"]
-include = ["airbnb-listing*"]
+include = ["airbnb_listing*"]
 
 [tool.ruff]
 line-length = 120

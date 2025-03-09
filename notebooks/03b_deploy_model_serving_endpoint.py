@@ -48,10 +48,10 @@ mlflow.set_registry_uri("databricks-uc")
 
 # COMMAND ----------
 
+# Accessing secrets: 
+
 # If running as a task in a Databricks workflow, then I can get the Databricks Host and Token from DAB
 # which in turns gets it from e.g., the Databricks secret scope or Github secrets from CI/CD
-
-# ***** I will implement this in the script, and remove the code below *****
 
 # If running outside of a Databricks Workflow, 
 # get the environment variables from dbutils (if running from Databricks workspace), 
