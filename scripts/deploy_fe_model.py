@@ -5,7 +5,11 @@ from databricks.connect import DatabricksSession
 from pyspark.dbutils import DBUtils
 
 from airbnb_listing.config import config
-from airbnb_listing.data_manager import get_env_catalog, table_exists
+from airbnb_listing.data_manager import (
+    get_env_catalog,
+    get_env_pipeline_id,
+    table_exists,
+)
 from airbnb_listing.logging import logger
 from airbnb_listing.serving.fe_model_serving import FeatureLookupServing
 
@@ -32,6 +36,7 @@ model_version = dbutils.jobs.taskValues.get(taskKey="train_model", key="model_ve
 
 # Define catalog, schema, and feature table, feature spec, and endpoint names
 catalog_name = get_env_catalog(env=args.env)
+pipeline_id = get_env_pipeline_id(env=args.env)
 model_asset_schema_name = config.general.ML_ASSET_SCHEMA
 silver_schema_name = config.general.SILVER_SCHEMA
 gold_schema_name = config.general.GOLD_SCHEMA
@@ -56,7 +61,7 @@ if not table_exists(
     feature_model_server.create_online_table()
     logger.info("Online Feature Table created")
 else:
-    feature_model_server.update_online_table()
+    feature_model_server.update_online_table(pipeline_id=pipeline_id)
     logger.info("Online Feature Table updated")
 
 # Deploy the model serving endpoint with feature lookup
