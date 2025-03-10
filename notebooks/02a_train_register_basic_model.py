@@ -10,15 +10,12 @@ from airbnb_listing.models.basic_model import BasicModel
 # NOTE: hardcoded in notebooks, get env from DAB in scripts
 env = "dev"  # hardcoded
 
-# Get the catalog name based on the environment
-catalog_name = get_env_catalog(env)
-
 # COMMAND ----------
 # Load the configuration
 
 # NOTE: Hardcoded path in notebook, get root path from DAB in scripts
-root_path = "/Workspace/Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/.bundle/dev/airbnb-listing/"  # hardcoded
-config_path = f"{root_path}/files/project_config.yml"
+root_path = "/Workspace/Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/.bundle"
+config_path = f"{root_path}/{env}/airbnb-listing/files/project_config.yml"
 
 # If running locally, change the root path
 if not os.path.exists(config_path):
@@ -27,6 +24,8 @@ if not os.path.exists(config_path):
     config_path = f"{new_root_path}/project_config.yml"
 
 config = get_config(config_path)
+# Get the catalog name based on the environment
+catalog_name = get_env_catalog(env, config)
 
 # COMMAND ----------
 

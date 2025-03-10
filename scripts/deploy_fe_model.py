@@ -21,26 +21,28 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--env",
     action="store",
-    default=None,
+    default="dev",
     type=str,
-    required=True,
+    required=False,
 )
 
 parser.add_argument(
     "--root_path",
     action="store",
-    default=None,
+    default="/Workspace/Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/.bundle",
     type=str,
-    required=True,
+    required=False,
 )
 spark = DatabricksSession.builder.getOrCreate()
 
 # Get configuration
 args = parser.parse_args()
 
-# NOTE: root path is: /Workspace/Users/<user email>/.bundle/
+# NOTE: root path is: /Workspace/Users/<user email>/.bundle
 config_path = f"{args.root_path}/{args.env}/airbnb_listing/files/project_config.yml"
 config = get_config(config_path)
+catalog_name = get_env_catalog(env=args.env, config=config)
+pipeline_id = get_env_pipeline_id(env=args.env, config=config)
 dbutils = DBUtils(spark)
 
 # Get model version from the task with the task key "train_model"
@@ -48,8 +50,6 @@ dbutils = DBUtils(spark)
 model_version = dbutils.jobs.taskValues.get(taskKey="train_model", key="model_version")
 
 # Define catalog, schema, and feature table, feature spec, and endpoint names
-catalog_name = get_env_catalog(env=args.env)
-pipeline_id = get_env_pipeline_id(env=args.env)
 model_asset_schema_name = config.general.ML_ASSET_SCHEMA
 silver_schema_name = config.general.SILVER_SCHEMA
 gold_schema_name = config.general.GOLD_SCHEMA

@@ -15,14 +15,6 @@ mlflow.set_registry_uri("databricks-uc")
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-    "--env",
-    action="store",
-    default=None,
-    type=str,
-    required=True,
-)
-
-parser.add_argument(
     "--git_sha",
     action="store",
     default=None,
@@ -47,21 +39,29 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--env",
+    action="store",
+    default="dev",
+    type=str,
+    required=False,
+)
+
+parser.add_argument(
     "--root_path",
     action="store",
-    default=None,
+    default="/Workspace/Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/.bundle",
     type=str,
-    required=True,
+    required=False,
 )
 spark = DatabricksSession.builder.getOrCreate()
 
 # Get configuration
 args = parser.parse_args()
-catalog_name = get_env_catalog(env=args.env)
 
 # NOTE: root path is: /Workspace/Users/<user email>/.bundle/
 config_path = f"{args.root_path}/{args.env}/airbnb_listing/files/project_config.yml"
 config = get_config(config_path)
+catalog_name = get_env_catalog(env=args.env, config=config)
 dbutils = DBUtils(spark)
 
 # raw tags

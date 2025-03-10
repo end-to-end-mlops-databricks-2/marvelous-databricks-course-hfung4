@@ -46,7 +46,7 @@ class FeatureLookUpModel:
         self.ID_COLUMN = self.config.model.ID_COLUMN
         self.target = self.config.model.TARGET
         self.parameters = self.config.model.MODEL_PARAMS
-        self.catalog_name = get_env_catalog(self.env)
+        self.catalog_name = get_env_catalog(self.env, self.config)
         self.silver_schema = self.config.general.SILVER_SCHEMA
         self.gold_schema = self.config.general.GOLD_SCHEMA
         self.ml_asset_schema = self.config.general.ML_ASSET_SCHEMA

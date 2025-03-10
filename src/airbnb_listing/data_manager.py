@@ -1,13 +1,12 @@
 from databricks.connect import DatabricksSession
 
-from airbnb_listing.config import config
 
-
-def get_env_catalog(env):
+def get_env_catalog(env, config):
     """Get the catalog based on the environment
 
     Args:
         env (str): target environment
+        config(Config): configuration object
 
     Raises:
         ValueError: Invalid environment
@@ -26,11 +25,12 @@ def get_env_catalog(env):
         raise ValueError(f"Invalid environment: {env}")
 
 
-def get_env_pipeline_id(env):
+def get_env_pipeline_id(env, config):
     """Get the pipeline ID based on the environment
 
     Args:
         env (str): target environment
+        config(Config): configuration object
 
     Raises:
         ValueError: Invalid environment

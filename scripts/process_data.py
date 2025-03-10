@@ -3,7 +3,7 @@ import argparse
 from databricks.connect import DatabricksSession
 from sklearn.model_selection import train_test_split
 
-from airbnb_listing.config import config
+from airbnb_listing.config import get_config
 from airbnb_listing.data_manager import get_env_catalog
 from airbnb_listing.data_processor import DataProcessor, generate_synthetic_data
 from airbnb_listing.logging import logger
@@ -15,11 +15,28 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--env",
     action="store",
-    default=None,
+    default="dev",
     type=str,
-    required=True,
+    required=False,
 )
+
+parser.add_argument(
+    "--root_path",
+    action="store",
+    default="/Workspace/Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/.bundle",
+    type=str,
+    required=False,
+)
+
 args = parser.parse_args()
+
+
+# Get configuration
+
+# NOTE: root path is: /Workspace/Users/<user email>/.bundle/
+config_path = f"{args.root_path}/{args.env}/airbnb_listing/files/project_config.yml"
+config = get_config(config_path)
+catalog_name = get_env_catalog(env=args.env, config=config)
 
 
 # Import bronze data (always from the production catalog)
@@ -42,8 +59,6 @@ silver = data_processor.preprocess()
 train_df, test_df = train_test_split(silver, test_size=config.model.TEST_SIZE, random_state=config.general.RANDOM_STATE)
 logger.info(f"Training set shape: {train_df.shape}")
 logger.info(f"Test set shape: {test_df.shape}")
-
-catalog_name = get_env_catalog(args.env)
 
 # Load data to silver table
 train_silver_table_name = f"{catalog_name}.{config.general.SILVER_SCHEMA}.airbnb_listing_price_train"
