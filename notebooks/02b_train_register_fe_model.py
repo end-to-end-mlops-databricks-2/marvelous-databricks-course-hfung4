@@ -12,8 +12,9 @@ from databricks.connect import DatabricksSession
 # COMMAND ----------
 import os
 from airbnb_listing.config import Tags, get_config
-from airbnb_listing.data_manager import get_env_catalog
+from airbnb_listing.data_manager import get_env_catalog, table_exists
 from airbnb_listing.models.feature_lookup_model import FeatureLookUpModel
+from airbnb_listing.logging import logger
 
 # COMMAND ----------
 # NOTE: hardcoded in notebooks, get env from DAB in scripts
@@ -58,7 +59,7 @@ tags.git_sha
 # COMMAND ----------
 
 # Initialize the FeatureLookUpModel
-fe_model = FeatureLookUpModel(config=config, tags=tags, spark=spark)
+fe_model = FeatureLookUpModel(config=config, tags=tags, spark=spark, env=env)
 
 # COMMAND ----------
 
@@ -67,7 +68,18 @@ fe_model.tags
 # COMMAND ----------
 
 # Create the feature table
-fe_model.create_feature_table()
+if not table_exists(
+    catalog=catalog_name,
+    schema=config.general.GOLD_SCHEMA,
+    table=config.general.FEATURE_TABLE_NAME,
+):
+    # Feature table does not exist, create it
+    fe_model.create_feature_table()
+    logger.info("Feature table created.")
+else:
+    # Feature table already exists, update it
+    fe_model.update_feature_table()
+    logger.info("Feature table updated.")
 
 # COMMAND ----------
 
@@ -95,26 +107,35 @@ fe_model.feature_engineering()
 
 # Train the model
 fe_model.train()
+logger.info("✅ Model training complete.")
+
+# COMMAND ----------
+# Evaluate the model
+test_set = spark.table(
+    f"{catalog_name}.{config.general.SILVER_SCHEMA}.airbnb_listing_price_test"
+).limit(100)
+
+# Drop the columns in the feature table
+test_set = test_set.drop("latitude", "longitude", "is_manhattan")
+
+test_set.display()
+# COMMAND ----------
+# Get the "model_improved" flag
+model_improved = fe_model.model_improved(test_set)
+logger.info(f"Model evaluation completed. Model improved: {model_improved}")
 
 # COMMAND ----------
 
 # Register the model
-fe_model.register_model()
+if model_improved:
+    latest_version = fe_model.register_model()
+    logger.info("New model registered with version:", latest_version)
+else:
+    logger.info("Model did not improve, no new model registered.")
 
 # COMMAND ----------
-
-# Testing: load the model and make predictions
-# Lets run prediction on the last production model
-
-test_set = spark.table(
-    f"{catalog_name}.{config.general.SILVER_SCHEMA}.silver_airbnb_listing_price_test"
-).limit(10)
-X_test = test_set.drop("latitude", "longitude", "is_manhattan", config.model.TARGET)
-
-# COMMAND ----------
-
 # Make predictions
-predictions = fe_model.load_latest_model_and_predict(X_test)
+predictions = fe_model.load_latest_model_and_predict(test_set)
 
 # COMMAND ----------
 

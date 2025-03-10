@@ -4,7 +4,7 @@ import mlflow
 from databricks.connect import DatabricksSession
 from pyspark.dbutils import DBUtils
 
-from airbnb_listing.config import Tags, config
+from airbnb_listing.config import Tags, get_config
 from airbnb_listing.data_manager import get_env_catalog, table_exists
 from airbnb_listing.logging import logger
 from airbnb_listing.models.feature_lookup_model import FeatureLookUpModel
@@ -46,10 +46,23 @@ parser.add_argument(
     required=True,
 )
 
+parser.add_argument(
+    "--root_path",
+    action="store",
+    default=None,
+    type=str,
+    required=True,
+)
+
+# Get configuration
 spark = DatabricksSession.builder.getOrCreate()
 args = parser.parse_args()
 
 catalog_name = get_env_catalog(env=args.env)
+
+# NOTE: root path is: /Workspace/Users/<user email>/.bundle/
+config_path = f"{args.root_path}/{args.env}/airbnb_listing/files/project_config.yml"
+config = get_config(config_path)
 dbutils = DBUtils(spark)
 
 # raw tags
@@ -89,7 +102,7 @@ fe_model.feature_engineering()
 
 # Train the model
 fe_model.train()
-logger.info("Model training complete.")
+logger.info("✅ Model training complete.")
 
 # Evaluate the model
 test_set = spark.table(f"{catalog_name}.{config.general.SILVER_SCHEMA}.airbnb_listing_price_test").limit(100)
