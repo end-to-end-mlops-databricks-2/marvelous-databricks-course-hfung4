@@ -55,11 +55,11 @@ if config.general.GENERATE_AND_APPEND_SYN_DATA:
     # Generate synthetic data
     # This is mimicking a new data arrival. In real world, this would be a new batch of data.
     # bronze is passed to infer schema
-    synthetic_df = generate_synthetic_data(bronze, num_rows=100)
+    synthetic_df = generate_synthetic_data(df=bronze, config=config, num_rows=100)
     logger.info("Synthetic data generated.")
-    data_processor = DataProcessor(synthetic_df)
+    data_processor = DataProcessor(synthetic_df, config)
 else:
-    data_processor = DataProcessor(bronze)
+    data_processor = DataProcessor(bronze, config)
 
 silver = data_processor.preprocess()
 

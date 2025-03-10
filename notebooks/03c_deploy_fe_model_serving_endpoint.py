@@ -45,7 +45,7 @@ config = get_config(config_path)
 
 # Get the catalog name and pipeline_id based on the environment
 catalog_name = get_env_catalog(env)
-pipeline_id = get_env_pipeline_id(env=args.env)
+pipeline_id = get_env_pipeline_id(env)
 
 
 # COMMAND ----------

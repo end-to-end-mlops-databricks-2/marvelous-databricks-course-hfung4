@@ -9,29 +9,37 @@ from databricks.sdk.service.catalog import (
 )
 from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
 
-from airbnb_listing.config import config
+from airbnb_listing.config import Config
 from airbnb_listing.logging import logger
 
 
 class FeatureLookupServing:
-    def __init__(self, model_name: str, endpoint_name: str, feature_table_name: str):
+    def __init__(
+        self,
+        model_name: str,
+        endpoint_name: str,
+        feature_table_name: str,
+        config: Config,
+    ):
         """Initializes the Feature Lookup Serving Manager.
 
         Args:
             model_name (str): name of the model
             endpoint_name (str): name of the endpoint
             feature_table_name (str): name of the feature table that will be used to retrieve some features for the model at inference
+            config (Config): configuration object
         """
         self.workspace = WorkspaceClient()
         self.feature_table_name = feature_table_name
         self.online_table_name = f"{self.feature_table_name}_online"
         self.model_name = model_name
         self.endpoint_name = endpoint_name
+        self.config = config
 
     def create_online_table(self):
         """Creates an online table based on a feature table."""
         spec = OnlineTableSpec(
-            primary_key_columns=config.model.ID_COLUMN,
+            primary_key_columns=self.config.model.ID_COLUMN,
             source_table_full_name=self.feature_table_name,
             run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
             perform_full_copy=False,

@@ -5,32 +5,33 @@ import pandas as pd
 from databricks.connect import DatabricksSession
 from pyspark.sql.functions import current_timestamp, to_utc_timestamp
 
-from airbnb_listing.config import config
+from airbnb_listing.config import Config
 from airbnb_listing.logging import logger
 
 spark = DatabricksSession.builder.getOrCreate()
 
 
 class DataProcessor:
-    def __init__(self, pandas_df: pd.DataFrame):
+    def __init__(self, pandas_df: pd.DataFrame, config: Config):
         self.df = pandas_df  # Store the DataFrame as self.df
-        # self.config = config  # Store the configuration
+        self.config = config  # Store the configuration
 
     def preprocess(self) -> pd.DataFrame:
         """Preprocess the data and perform feature engineering
 
         Returns:
             pd.DataFrame: processed dataframe
+            config: configuration object
         """
         # Drop all rows with missing values in the target column
         self.df.dropna(subset=["price"], inplace=True)
 
         # Convert certain float columns to Int64 (pandas nullable integer type)
-        # for col in config.model.INTEGER_COLUMNS:
+        # for col in self.config.model.INTEGER_COLUMNS:
         #    self.df[col] = self.df[col].astype("Int64")  # Nullable integer
 
         # Convert the id column to a string
-        self.df[config.model.ID_COLUMN] = self.df[config.model.ID_COLUMN].astype(str)
+        self.df[self.config.model.ID_COLUMN] = self.df[self.config.model.ID_COLUMN].astype(str)
 
         # Log the price
         self.df["log_price"] = np.log1p(self.df["price"])
@@ -64,17 +65,17 @@ class DataProcessor:
         # Lump rare neghbourhoods into 'Other'
         neighbourhood_percentage = self.df["neighbourhood"].value_counts(normalize=True) * 100
         self.df["neighbourhood"] = self.df["neighbourhood"].where(
-            self.df["neighbourhood"].map(neighbourhood_percentage) >= config.model.THRESHOLD_NEIGHBOURHOOD,
+            self.df["neighbourhood"].map(neighbourhood_percentage) >= self.config.model.THRESHOLD_NEIGHBOURHOOD,
             "Other",
         )
 
         # Select the columns to be used for traing
         selected_columns = (
-            [config.model.ID_COLUMN]
-            + config.model.SELECTED_CATEGORICAL_FEATURES
-            + config.model.SELECTED_NUMERIC_FEATURES
-            + config.model.SELECTED_TIMESTAMP_FEATURES
-            + [config.model.TARGET]
+            [self.config.model.ID_COLUMN]
+            + self.config.model.SELECTED_CATEGORICAL_FEATURES
+            + self.config.model.SELECTED_NUMERIC_FEATURES
+            + self.config.model.SELECTED_TIMESTAMP_FEATURES
+            + [self.config.model.TARGET]
         )
         self.df = self.df.loc[:, selected_columns]
 
@@ -94,7 +95,7 @@ class DataProcessor:
 
         # Write table to Unity Catalog
 
-        if config.general.GENERATE_AND_APPEND_SYN_DATA:
+        if self.config.general.GENERATE_AND_APPEND_SYN_DATA:
             # Append synthetic data to the existing table
             processed_spark.write.mode("append").saveAsTable(table_name)
         else:
@@ -110,11 +111,12 @@ class DataProcessor:
         logger.info(f"Data written to {table_name} in Unity Catalog.")
 
 
-def generate_synthetic_data(df, num_rows=10):
+def generate_synthetic_data(df, config: Config, num_rows=10):
     """Generate synthetic data based on the distribution of the input DataFrame.
 
     Args:
         df (pd.DataFrame): input DataFrame
+        config (Config): configuration object
         num_rows (int): number of rows to generate
 
     Returns:

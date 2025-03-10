@@ -72,6 +72,7 @@ feature_model_server = FeatureLookupServing(
     model_name=f"{catalog_name}.{model_asset_schema_name}.{model_name}",
     endpoint_name=endpoint_name,
     feature_table_name=f"{catalog_name}.{gold_schema_name}.{feature_table_name}",
+    config=config,
 )
 
 
