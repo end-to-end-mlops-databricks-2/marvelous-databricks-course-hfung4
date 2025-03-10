@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import mlflow
 from databricks.connect import DatabricksSession
@@ -38,9 +39,18 @@ spark = DatabricksSession.builder.getOrCreate()
 # Get configuration
 args = parser.parse_args()
 
-# NOTE: root path is: /Workspace/Users/<user email>/.bundle
+# NOTE: root path is: /Workspace/Users/<user email>/.bundle/
 config_path = f"{args.root_path}/{args.env}/airbnb_listing/files/project_config.yml"
+
+# If running locally, change the root path
+if not os.path.exists(config_path):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    new_root_path = os.path.dirname(current_dir)  # Move one level up
+    config_path = f"{new_root_path}/project_config.yml"
+
 config = get_config(config_path)
+
+
 catalog_name = get_env_catalog(env=args.env, config=config)
 pipeline_id = get_env_pipeline_id(env=args.env, config=config)
 dbutils = DBUtils(spark)

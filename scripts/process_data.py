@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from databricks.connect import DatabricksSession
 from sklearn.model_selection import train_test_split
@@ -35,9 +36,16 @@ args = parser.parse_args()
 
 # NOTE: root path is: /Workspace/Users/<user email>/.bundle/
 config_path = f"{args.root_path}/{args.env}/airbnb_listing/files/project_config.yml"
-config = get_config(config_path)
-catalog_name = get_env_catalog(env=args.env, config=config)
 
+# If running locally, change the root path
+if not os.path.exists(config_path):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    new_root_path = os.path.dirname(current_dir)  # Move one level up
+    config_path = f"{new_root_path}/project_config.yml"
+
+config = get_config(config_path)
+
+catalog_name = get_env_catalog(env=args.env, config=config)
 
 # Import bronze data (always from the production catalog)
 bronze_table_name = f"{config.general.PROD_CATALOG}.{config.general.BRONZE_SCHEMA}.airbnb_listing_price"
