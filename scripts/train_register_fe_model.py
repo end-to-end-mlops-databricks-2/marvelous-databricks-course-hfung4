@@ -53,11 +53,10 @@ parser.add_argument(
     type=str,
     required=True,
 )
+spark = DatabricksSession.builder.getOrCreate()
 
 # Get configuration
-spark = DatabricksSession.builder.getOrCreate()
 args = parser.parse_args()
-
 catalog_name = get_env_catalog(env=args.env)
 
 # NOTE: root path is: /Workspace/Users/<user email>/.bundle/

@@ -4,7 +4,7 @@ import mlflow
 from databricks.connect import DatabricksSession
 from pyspark.dbutils import DBUtils
 
-from airbnb_listing.config import config
+from airbnb_listing.config import get_config
 from airbnb_listing.data_manager import (
     get_env_catalog,
     get_env_pipeline_id,
@@ -26,8 +26,21 @@ parser.add_argument(
     required=True,
 )
 
-args = parser.parse_args()
+parser.add_argument(
+    "--root_path",
+    action="store",
+    default=None,
+    type=str,
+    required=True,
+)
 spark = DatabricksSession.builder.getOrCreate()
+
+# Get configuration
+args = parser.parse_args()
+
+# NOTE: root path is: /Workspace/Users/<user email>/.bundle/
+config_path = f"{args.root_path}/{args.env}/airbnb_listing/files/project_config.yml"
+config = get_config(config_path)
 dbutils = DBUtils(spark)
 
 # Get model version from the task with the task key "train_model"
