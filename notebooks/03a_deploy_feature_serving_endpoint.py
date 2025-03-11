@@ -92,10 +92,10 @@ silver_schema_name = config.general.SILVER_SCHEMA
 
 # Get the train and test set, and then combine them into a single dataframe
 train_set = spark.table(
-    f"{catalog_name}.{silver_schema_name}.silver_airbnb_listing_price_train"
+    f"{catalog_name}.{silver_schema_name}.airbnb_listing_price_train"
 ).toPandas()
 test_set = spark.table(
-    f"{catalog_name}.{silver_schema_name}.silver_airbnb_listing_price_test"
+    f"{catalog_name}.{silver_schema_name}.airbnb_listing_price_test"
 ).toPandas()
 full_df = pd.concat([train_set, test_set])
 full_df.head()

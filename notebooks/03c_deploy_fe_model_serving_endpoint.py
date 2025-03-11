@@ -46,8 +46,8 @@ if not os.path.exists(config_path):
 config = get_config(config_path)
 
 # Get the catalog name and pipeline_id based on the environment
-catalog_name = get_env_catalog(env)
-pipeline_id = get_env_pipeline_id(env)
+catalog_name = get_env_catalog(env, config)
+pipeline_id = get_env_pipeline_id(env, config)
 
 
 # COMMAND ----------

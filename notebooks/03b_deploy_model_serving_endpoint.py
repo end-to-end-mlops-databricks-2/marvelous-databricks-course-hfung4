@@ -105,7 +105,7 @@ feature_model_server.deploy_or_update_serving_endpoint()
 
 # Create a sample request body
 train_set = spark.table(
-    f"{catalog_name}.{silver_schema_name}.silver_airbnb_listing_price_train"
+    f"{catalog_name}.{silver_schema_name}.airbnb_listing_price_train"
 ).drop("update_timestamp_utc")
 
 train_set = train_set.toPandas()
