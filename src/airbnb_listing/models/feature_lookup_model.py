@@ -8,6 +8,7 @@ from databricks.connect import DatabricksSession
 from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from databricks.sdk import WorkspaceClient
 from lightgbm import LGBMRegressor
+from mlflow.exceptions import MlflowException
 from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
 from pyspark.sql import DataFrame
@@ -280,6 +281,24 @@ class FeatureLookUpModel:
                 training_set=self.training_set_spec,
                 signature=signature,
             )
+
+    def check_model_exists(self):
+        client = MlflowClient()
+
+        model_uri = f"models:/{self.catalog_name}.{self.ml_asset_schema}.{self.config.model.MODEL_NAME}_fe@latest-model"
+        uri_substring = model_uri.split("/")[-1]
+        target_model_name = uri_substring.split("@")[-2]
+        target_alias = uri_substring.split("@")[-1]
+        try:
+            client.get_model_version_by_alias(target_model_name, target_alias)
+            logger.info(f"Model with the uri: {model_uri} already exists.")
+            return True
+        except MlflowException as e:
+            if e.error_code == "RESOURCE_DOES_NOT_EXIST":
+                logger.info(f"Model with the uri: {model_uri} does not exist.")
+                return False
+            else:
+                raise
 
     def register_model(self):
         """Register the model in the model registry"""

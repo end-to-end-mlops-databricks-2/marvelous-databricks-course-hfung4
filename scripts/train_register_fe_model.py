@@ -118,17 +118,21 @@ test_set = spark.table(f"{catalog_name}.{config.general.SILVER_SCHEMA}.airbnb_li
 # Drop the columns in the feature table
 test_set = test_set.drop("latitude", "longitude", "is_manhattan")
 
-# Get the "model_improved" flag
-model_improved = fe_model.model_improved(test_set)
-logger.info(f"Model evaluation completed. Model improved: {model_improved}")
+# Check if the model already exist (i.e. there is at least one model version in the registry)
+model_exists = fe_model.check_model_exists()
 
-# Register the model
-if model_improved:
+if model_exists:
+    # Get the "model_improved" flag
+    model_improved = fe_model.model_improved(test_set)
+    logger.info(f"Model evaluation completed. Model improved: {model_improved}")
+
+# Register the model if there is a model performance improvement, or I have a new model
+if model_improved or not model_exists:
     latest_version = fe_model.register_model()
-    logger.info("New model registered with version:", latest_version)
+    logger.info(f"New model registered with version:{latest_version}")
     # Log the model version and update flag to be passed to the next task
     dbutils.jobs.taskValues.set(key="model_version", value=latest_version)
     dbutils.jobs.taskValues.set(key="model_updated", value=1)  # set to 1 if model_updated is True
 else:
-    # We don't register the model if it didn't improve
+    # We don't register the model if it didn't improved
     dbutils.jobs.taskValues.set(key="model_updated", value=0)  # set to 0 if model_updated is False

@@ -24,7 +24,8 @@ env = "dev"  # hardcoded
 # Load the configuration
 # NOTE: Hardcoded path in notebook, get root path from DAB in scripts
 root_path = "/Workspace/Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/.bundle"
-config_path = f"{root_path}/{env}/airbnb-listing/files/project_config.yml"
+env_root_path = f"{root_path}/{env}/marvelous-databricks-course-hfung4/files"
+config_path = f"{env_root_path}/project_config.yml"
 
 # If running locally, change the root path
 if not os.path.exists(config_path):

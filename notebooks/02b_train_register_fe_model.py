@@ -1,5 +1,5 @@
 # Databricks notebook source
-%pip install ../../artifacts/.internal/airbnb_listing-0.0.10-py3-none-any.whl
+%pip install ../../artifacts/.internal/airbnb_listing-0.0.9-py3-none-any.whl
 
 # COMMAND ----------
 dbutils.library.restartPython()
@@ -25,14 +25,8 @@ env = "dev"  # hardcoded
 
 # NOTE: Hardcoded path in notebook, get root path from DAB in scripts
 root_path = "/Workspace/Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/.bundle"
-config_path = f"{root_path}/{env}/airbnb-listing/files/project_config.yml"
-
-# If running locally, change the root path
-if not os.path.exists(config_path):
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    new_root_path = os.path.dirname(current_dir)  # Move one level up
-    config_path = f"{new_root_path}/project_config.yml"
-
+env_root_path = f"{root_path}/{env}/marvelous-databricks-course-hfung4/files"
+config_path = f"{env_root_path}/project_config.yml"
 config = get_config(config_path)
 
 # Get the catalog name based on the environment
@@ -119,15 +113,22 @@ test_set = spark.table(
 test_set = test_set.drop("latitude", "longitude", "is_manhattan")
 
 test_set.display()
+
 # COMMAND ----------
-# Get the "model_improved" flag
-model_improved = fe_model.model_improved(test_set)
-logger.info(f"Model evaluation completed. Model improved: {model_improved}")
+# Check if the model already exists, or I have a new model
+model_exists = fe_model.check_model_exists()
+model_exists
+
+# COMMAND ----------
+# If the model already exist (at least one model version in the Model Registry), I will check if the new model is better than the existing model
+if model_exists:
+    model_improved = fe_model.model_improved(test_set)
+    logger.info(f"Model evaluation completed. Model improved: {model_improved}")
 
 # COMMAND ----------
 
-# Register the model
-if model_improved:
+# Register the model if there is a model performance improvement, or I have a new model
+if model_improved or not model_exists:
     latest_version = fe_model.register_model()
     logger.info("New model registered with version:", latest_version)
 else:
