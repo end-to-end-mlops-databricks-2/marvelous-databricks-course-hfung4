@@ -8,7 +8,6 @@ dbutils.library.restartPython()
 # COMMAND ----------
 
 import os
-import time
 from typing import Dict, List
 import requests
 from databricks.connect import DatabricksSession

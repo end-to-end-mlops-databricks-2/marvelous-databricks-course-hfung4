@@ -2,19 +2,14 @@
 
 # COMMAND ----------
 import os
-import pandas as pd
-from pyspark.sql.functions import col
-from pyspark.sql.functions import current_timestamp, to_utc_timestamp
 from databricks.connect import DatabricksSession
 from airbnb_listing.config import get_config
-from airbnb_listing.data_manager import (
-    get_env_catalog,
-    get_env_pipeline_id,
-    table_exists,
-)
+from databricks.sdk import WorkspaceClient
+from airbnb_listing.monitoring import create_or_refresh_monitoring
 
 # COMMAND ----------
 spark = DatabricksSession.builder.getOrCreate()
+workspace = WorkspaceClient()
 
 # COMMAND ----------
 # NOTE: hardcoded in notebooks, get env from DAB in scripts
@@ -36,17 +31,5 @@ if not os.path.exists(config_path):
 
 config = get_config(config_path)
 
-# Get the catalog name and pipeline_id based on the environment
-catalog_name = get_env_catalog(env, config)
-
-
 # COMMAND ----------
-# Get train and test set
-train_set = spark.table(
-    f"{catalog_name}.{config.general.SILVER_SCHEMA_NAME}.airbnb_listing_price_train"
-).toPandas()
-test_set = spark.table(
-    f"{catalog_name}.{config.general.SILVER_SCHEMA_NAME}.airbnb_listing_price_test"
-).toPandas()
-
-# COMMAND ----------
+create_or_refresh_monitoring(config=config, spark=spark, workspace=workspace)

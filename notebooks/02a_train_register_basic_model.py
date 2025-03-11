@@ -102,7 +102,7 @@ basic_model.register_model()
 
 # Perform inference with the registered model using the test set
 test_set = spark.table(
-    f"{catalog_name}.{config.general.SILVER_SCHEMA}.silver_airbnb_listing_price_test"
+    f"{catalog_name}.{config.general.SILVER_SCHEMA}.airbnb_listing_price_test"
 )
 
 # COMMAND ----------
