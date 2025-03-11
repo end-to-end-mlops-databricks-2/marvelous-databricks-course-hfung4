@@ -111,13 +111,14 @@ class DataProcessor:
         logger.info(f"Data written to {table_name} in Unity Catalog.")
 
 
-def generate_synthetic_data(df, config: Config, num_rows=10):
+def generate_synthetic_data(df, config: Config, num_rows=10, drift=False):
     """Generate synthetic data based on the distribution of the input DataFrame.
 
     Args:
         df (pd.DataFrame): input DataFrame
         config (Config): configuration object
         num_rows (int): number of rows to generate
+        drift (bool): simulate data drift
 
     Returns:
         pd.DataFrame: synthetic DataFrame
@@ -178,5 +179,52 @@ def generate_synthetic_data(df, config: Config, num_rows=10):
     # Cast host_id to float and id to int32
     synthetic_data["host_id"] = synthetic_data["host_id"].astype(float)
     synthetic_data["id"] = synthetic_data["id"].astype("int32")
+
+    if drift:
+        # Simulate data drift by manipulating the distribution of neighbourhood_group
+        # Reduce the proportion of listings in Manhattan to 10% (previously 44%)
+
+        # Calculate how many rows should be Manhattan (10% of total)
+        manhattan_count = int(0.1 * num_rows)
+
+        # Get all unique neighbourhood_groups excluding Manhattan
+        other_groups = df["neighbourhood_group"].unique()
+        other_groups = other_groups[other_groups != "Manhattan"]
+
+        # Randomly select rows to be Manhattan
+        manhattan_indices = np.random.choice(num_rows, manhattan_count, replace=False)
+        non_manhattan_indices = np.array([i for i in range(num_rows) if i not in manhattan_indices])
+
+        # Assign Manhattan to selected rows
+        synthetic_data.loc[manhattan_indices, "neighbourhood_group"] = "Manhattan"
+
+        # Randomly assign other neighbourhood groups to remaining rows
+        synthetic_data.loc[non_manhattan_indices, "neighbourhood_group"] = np.random.choice(
+            other_groups, size=len(non_manhattan_indices)
+        )
+
+        # Simulate data drift by manipulating the distribution of room_type
+        # Set room type distribution to:
+        # - Entire home/apt: 90%
+        # - Private room: 8%
+        # - Shared room: 2%
+
+        # Calculate counts for each room type
+        entire_home_count = int(0.9 * num_rows)
+        private_room_count = int(0.08 * num_rows)
+
+        # Create arrays for indices
+        indices = np.arange(num_rows)
+        np.random.shuffle(indices)
+
+        # Split indices for different room types
+        entire_home_indices = indices[:entire_home_count]
+        private_room_indices = indices[entire_home_count : entire_home_count + private_room_count]
+        shared_room_indices = indices[entire_home_count + private_room_count :]
+
+        # Assign room types
+        synthetic_data.loc[entire_home_indices, "room_type"] = "Entire home/apt"
+        synthetic_data.loc[private_room_indices, "room_type"] = "Private room"
+        synthetic_data.loc[shared_room_indices, "room_type"] = "Shared room"
 
     return synthetic_data
