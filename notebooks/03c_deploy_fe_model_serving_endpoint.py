@@ -13,6 +13,7 @@ from typing import Dict, List
 import requests
 from databricks.connect import DatabricksSession
 import mlflow
+from pyspark.dbutils import DBUtils
 
 from airbnb_listing.config import get_config
 from airbnb_listing.data_manager import (
@@ -60,33 +61,18 @@ mlflow.set_registry_uri("databricks-uc")
 
 # COMMAND ----------
 
-# Accessing secrets: 
-
-# If running as a task in a Databricks workflow, then I can get the Databricks Host and Token from DAB
+# NOTE: If running as a task in a Databricks workflow, then I can get the Databricks Host and Token from DAB
 # which in turns gets it from e.g., the Databricks secret scope or Github secrets from CI/CD
 
-# If running outside of a Databricks Workflow, 
-# get the environment variables from dbutils (if running from Databricks workspace), 
-# or the .env file if running locally via Databricks Connect
-
-if config.general.RUN_ON_DATABRICKS_WORKSPACE:
-    from pyspark.dbutils import DBUtils
-
-    dbutils = DBUtils(spark)
-    os.environ["DBR_TOKEN"] = (
-        dbutils.notebook.entry_point.getDbutils()
-        .notebook()
-        .getContext()
-        .apiToken()
-        .get()
-    )
-    os.environ["DBR_HOST"] = spark.conf.get("spark.databricks.workspaceUrl")
-else:
-    # If running locally, get the environment variables from the .env file
-    from airbnb_listing.env import DB_HOST, DB_TOKEN
-
-    os.environ["DBR_HOST"] = DB_HOST
-    os.environ["DBR_TOKEN"] = DB_TOKEN
+dbutils = DBUtils(spark)
+os.environ["DBR_TOKEN"] = (
+    dbutils.notebook.entry_point.getDbutils()
+    .notebook()
+    .getContext()
+    .apiToken()
+    .get()
+)
+os.environ["DBR_HOST"] = spark.conf.get("spark.databricks.workspaceUrl")
 
 # COMMAND ----------
 
@@ -141,19 +127,19 @@ logger.info("Started deployment/update of the serving endpoint")
 # COMMAND ----------
 
 # Create a sample request body
-train_set = spark.table(f"{catalog_name}.{silver_schema_name}.silver_airbnb_listing_price_train").drop(
+train_set = spark.table(f"{catalog_name}.{silver_schema_name}.airbnb_listing_price_train").drop(
             "latitude", "longitude", "is_manhattan","update_timestamp_utc"
         )
 
 train_set = train_set.toPandas()
 
+# Need to change to nullable float64 to be able to have NA rather than NaN
+# JSON does not support NaN
 for col in ["minimum_nights",
             "estimated_listed_months",
             "availability_365",
             "number_of_reviews",
             "calculated_host_listings_count"]:
-    # Need to change to nullable float64 to be able to have NA rather than NaN
-    # JSON does not support NaN
     train_set[col] = train_set[col].astype('Float64')
 
 train_set.head()
@@ -195,3 +181,9 @@ def call_endpoint(record: List[Dict]):
 status_code, response_text = call_endpoint(dataframe_records[0])
 print(f"Response Status: {status_code}")
 print(f"Response Text: {response_text}")
+
+# COMMAND ----------
+# Look at model log (inference table) of the endpoint
+
+inference_table_df= spark.table("dev.airbnb_listing_ml_assets.airbnb_listing_price_model_payload")
+inference_table_df.display()
