@@ -106,6 +106,7 @@ feature_model_server = FeatureLookupServing(
     endpoint_name=endpoint_name,
     feature_table_name=f"{catalog_name}.{gold_schema_name}.{feature_table_name}",
     config=config,
+    env = env
 )
 
 # COMMAND ----------
