@@ -146,6 +146,15 @@ train_set = spark.table(f"{catalog_name}.{silver_schema_name}.silver_airbnb_list
 
 train_set = train_set.toPandas()
 
+for col in ["minimum_nights",
+            "estimated_listed_months",
+            "availability_365",
+            "number_of_reviews",
+            "calculated_host_listings_count"]:
+    # Need to change to nullable float64 to be able to have NA rather than NaN
+    # JSON does not support NaN
+    train_set[col] = train_set[col].astype('Float64')
+
 train_set.head()
 
 # COMMAND ----------
