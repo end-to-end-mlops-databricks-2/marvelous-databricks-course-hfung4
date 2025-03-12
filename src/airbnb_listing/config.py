@@ -13,7 +13,6 @@ PACKAGE_ROOT = Path(__file__).resolve().parent  # path/to/airbnb_listing
 ROOT = PACKAGE_ROOT.parent.parent  # repo root
 LOGS_DIR = Path(ROOT / "logs")
 TESTS_DIR = Path(ROOT / "tests")
-CONFIG_FILE_PATH = ROOT / "project_config.yml"
 ENV_DIR = Path(ROOT / ".env")
 
 
@@ -58,20 +57,6 @@ class Config(BaseModel):
     model: ModelConfig
 
 
-def find_config_file() -> Path:
-    """Locate the configuration file.
-
-    Raises:
-        Exception: Configuration file not found at the specified path
-
-    Returns:
-        Path: path to the configuration file
-    """
-    if CONFIG_FILE_PATH.is_file():
-        return CONFIG_FILE_PATH
-    raise Exception(f"Config not found at {CONFIG_FILE_PATH!r}")
-
-
 def fetch_config_from_yaml(cfg_path: Path = None) -> object:
     """Parse YAML containing the package configuration
     Args:
@@ -83,28 +68,22 @@ def fetch_config_from_yaml(cfg_path: Path = None) -> object:
     Returns:
         parsed_config: parsed configuration from yaml
     """
-    if not cfg_path:
-        cfg_path = find_config_file()
-
-    if cfg_path:
-        with open(cfg_path, "r") as conf_file:
-            parsed_config = yaml.safe_load(conf_file)
-            return parsed_config
+    with open(cfg_path, "r") as conf_file:
+        parsed_config = yaml.safe_load(conf_file)
+        return parsed_config
     raise OSError(f"Did not find config file at path: {cfg_path}")
 
 
-def create_and_validate_config(parsed_config: object = None) -> Config:
-    """Run validation on config values
+def get_config(config_file_path: Path) -> Config:
+    """Run validation on config values, and return a validated config object
 
     Args:
-        parsed_config (object, optional): parsed configuration object. Defaults to None.
+        config_file_path (Path): Path to the configuration yaml
 
     Returns:
         Config: validated configuration object
     """
-
-    if parsed_config is None:
-        parsed_config = fetch_config_from_yaml(CONFIG_FILE_PATH)
+    parsed_config = fetch_config_from_yaml(config_file_path)
 
     # specify the data attribute from the strictyaml YAML type.
     _config = Config(
@@ -115,12 +94,7 @@ def create_and_validate_config(parsed_config: object = None) -> Config:
     return _config
 
 
-# Load the configuration
-config = create_and_validate_config()
-
-
 # Validated tags
 class Tags(BaseModel):
     git_sha: str
     branch: str
-    job_run_id: str

@@ -7,31 +7,48 @@ from databricks.sdk.service.catalog import (
     OnlineTableSpec,
     OnlineTableSpecTriggeredSchedulingPolicy,
 )
-from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
+from databricks.sdk.service.serving import (
+    AutoCaptureConfigInput,
+    EndpointCoreConfigInput,
+    ServedEntityInput,
+)
 
-from airbnb_listing.config import config
+from airbnb_listing.config import Config
+from airbnb_listing.data_manager import get_env_catalog
 from airbnb_listing.logging import logger
 
 
 class FeatureLookupServing:
-    def __init__(self, model_name: str, endpoint_name: str, feature_table_name: str):
+    def __init__(
+        self,
+        model_name: str,
+        endpoint_name: str,
+        feature_table_name: str,
+        config: Config,
+        env: str,
+    ):
         """Initializes the Feature Lookup Serving Manager.
 
         Args:
             model_name (str): name of the model
             endpoint_name (str): name of the endpoint
             feature_table_name (str): name of the feature table that will be used to retrieve some features for the model at inference
+            config (Config): configuration object
+            env (str): target environment
         """
         self.workspace = WorkspaceClient()
         self.feature_table_name = feature_table_name
         self.online_table_name = f"{self.feature_table_name}_online"
         self.model_name = model_name
         self.endpoint_name = endpoint_name
+        self.env = env
+        self.config = config
+        self.catalog_name = get_env_catalog(self.env, self.config)
 
     def create_online_table(self):
         """Creates an online table based on a feature table."""
         spec = OnlineTableSpec(
-            primary_key_columns=config.model.ID_COLUMN,
+            primary_key_columns=[self.config.model.ID_COLUMN],
             source_table_full_name=self.feature_table_name,
             run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
             perform_full_copy=False,
@@ -112,13 +129,27 @@ class FeatureLookupServing:
                 entity_version=entity_version,
             )
         ]
+        # autocapture configs
+        auto_capture_config = AutoCaptureConfigInput(
+            catalog_name=self.catalog_name,
+            schema_name=self.config.general.ML_ASSET_SCHEMA,
+            table_name_prefix=self.config.model.MODEL_NAME,
+            enabled=True,
+        )
 
         if not endpoint_exists:
             # create the endpoint
             self.workspace.serving_endpoints.create(
                 name=self.endpoint_name,
-                config=EndpointCoreConfigInput(served_entities=served_entities),
+                config=EndpointCoreConfigInput(
+                    served_entities=served_entities,
+                    auto_capture_config=auto_capture_config,
+                ),
             )
         else:
             # update the endpoint
-            self.workspace.serving_endpoints.update_config(name=self.endpoint_name, served_entities=served_entities)
+            self.workspace.serving_endpoints.update_config(
+                name=self.endpoint_name,
+                served_entities=served_entities,
+                auto_capture_config=auto_capture_config,
+            )

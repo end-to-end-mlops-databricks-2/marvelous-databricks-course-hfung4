@@ -1,11 +1,16 @@
 import argparse
+import os
 
 import mlflow
 from databricks.connect import DatabricksSession
 from pyspark.dbutils import DBUtils
 
-from airbnb_listing.config import config
-from airbnb_listing.data_manager import get_env_catalog, table_exists
+from airbnb_listing.config import get_config
+from airbnb_listing.data_manager import (
+    get_env_catalog,
+    get_env_pipeline_id,
+    table_exists,
+)
 from airbnb_listing.logging import logger
 from airbnb_listing.serving.fe_model_serving import FeatureLookupServing
 
@@ -17,13 +22,37 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--env",
     action="store",
-    default=None,
+    default="dev",
     type=str,
-    required=True,
+    required=False,
 )
 
-args = parser.parse_args()
+parser.add_argument(
+    "--root_path",
+    action="store",
+    default="/Workspace/Users/henryhfung4_gmail.com#ext#@henryhfung4gmail.onmicrosoft.com/.bundle",
+    type=str,
+    required=False,
+)
 spark = DatabricksSession.builder.getOrCreate()
+
+# Get configuration
+args = parser.parse_args()
+
+# NOTE: root path is: /Workspace/Users/<user email>/.bundle/
+config_path = f"{args.root_path}/{args.env}/airbnb_listing/files/project_config.yml"
+
+# If running locally, change the root path
+if not os.path.exists(config_path):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    new_root_path = os.path.dirname(current_dir)  # Move one level up
+    config_path = f"{new_root_path}/project_config.yml"
+
+config = get_config(config_path)
+
+
+catalog_name = get_env_catalog(env=args.env, config=config)
+pipeline_id = get_env_pipeline_id(env=args.env, config=config)
 dbutils = DBUtils(spark)
 
 # Get model version from the task with the task key "train_model"
@@ -31,7 +60,6 @@ dbutils = DBUtils(spark)
 model_version = dbutils.jobs.taskValues.get(taskKey="train_model", key="model_version")
 
 # Define catalog, schema, and feature table, feature spec, and endpoint names
-catalog_name = get_env_catalog(env=args.env)
 model_asset_schema_name = config.general.ML_ASSET_SCHEMA
 silver_schema_name = config.general.SILVER_SCHEMA
 gold_schema_name = config.general.GOLD_SCHEMA
@@ -44,6 +72,8 @@ feature_model_server = FeatureLookupServing(
     model_name=f"{catalog_name}.{model_asset_schema_name}.{model_name}",
     endpoint_name=endpoint_name,
     feature_table_name=f"{catalog_name}.{gold_schema_name}.{feature_table_name}",
+    config=config,
+    env=args.env,
 )
 
 
@@ -56,7 +86,7 @@ if not table_exists(
     feature_model_server.create_online_table()
     logger.info("Online Feature Table created")
 else:
-    feature_model_server.update_online_table()
+    feature_model_server.update_online_table(pipeline_id=pipeline_id)
     logger.info("Online Feature Table updated")
 
 # Deploy the model serving endpoint with feature lookup

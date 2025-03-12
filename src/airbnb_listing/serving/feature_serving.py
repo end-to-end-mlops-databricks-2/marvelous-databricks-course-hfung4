@@ -8,19 +8,26 @@ from databricks.sdk.service.catalog import (
 )
 from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
 
-from airbnb_listing.config import config
+from airbnb_listing.config import Config
 from airbnb_listing.logging import logger
 
 
 # Feature Serving Manager
 class FeatureServing:
-    def __init__(self, feature_table_name: str, feature_spec_name: str, endpoint_name: str):
+    def __init__(
+        self,
+        feature_table_name: str,
+        feature_spec_name: str,
+        endpoint_name: str,
+        config: Config,
+    ):
         """Initializes the prediction serving manager
 
         Args:
             feature_table_name (str): user specified name of the feature table
             feature_spec_name (str): user specified name of the feature spec
             endpoint_name (str): user specifed name of the endpoint
+            config (Config): configuration object
         """
         self.feature_table_name = feature_table_name
         self.workspace = WorkspaceClient()
@@ -28,11 +35,12 @@ class FeatureServing:
         self.endpoint_name = endpoint_name
         self.online_table_name = f"{self.feature_table_name}_online"
         self.fe = feature_engineering.FeatureEngineeringClient()
+        self.config = config
 
     def create_online_table(self):
         """Create an online table based on a feature table"""
         spec = OnlineTableSpec(
-            primary_key_columns=[config.model.ID_COLUMN],
+            primary_key_columns=[self.config.model.ID_COLUMN],
             source_table_full_name=self.feature_table_name,
             run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict({"triggered": "true"}),
             perform_full_copy=False,
@@ -49,7 +57,7 @@ class FeatureServing:
         features = [
             FeatureLookup(
                 table_name=self.feature_table_name,
-                lookup_key=config.model.ID_COLUMN,
+                lookup_key=self.config.model.ID_COLUMN,
                 feature_names=[
                     "latitude",
                     "longitude",
