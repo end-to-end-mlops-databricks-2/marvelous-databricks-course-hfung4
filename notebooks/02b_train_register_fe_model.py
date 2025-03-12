@@ -10,7 +10,6 @@ import mlflow
 from databricks.connect import DatabricksSession
 
 # COMMAND ----------
-import os
 from airbnb_listing.config import Tags, get_config
 from airbnb_listing.data_manager import get_env_catalog, table_exists
 from airbnb_listing.models.feature_lookup_model import FeatureLookUpModel

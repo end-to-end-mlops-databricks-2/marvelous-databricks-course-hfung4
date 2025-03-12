@@ -4,8 +4,12 @@
 import os
 from databricks.connect import DatabricksSession
 from airbnb_listing.config import get_config
+from airbnb_listing.data_manager import get_env_catalog
 from databricks.sdk import WorkspaceClient
-from airbnb_listing.monitoring import create_or_refresh_monitoring
+from airbnb_listing.monitoring import (
+    process_inference_table,
+    create_or_refresh_monitoring,
+)
 
 # COMMAND ----------
 spark = DatabricksSession.builder.getOrCreate()
@@ -30,6 +34,17 @@ if not os.path.exists(config_path):
     config_path = f"{new_root_path}/project_config.yml"
 
 config = get_config(config_path)
+catalog_name = get_env_catalog(env, config)
 
 # COMMAND ----------
-create_or_refresh_monitoring(config=config, spark=spark, workspace=workspace)
+
+# Create processed inference table to be used for Lakehouse monitoring
+process_inference_table(config=config, env=env, spark=spark)
+
+# COMMAND ----------
+create_or_refresh_monitoring(
+    processed_inference_table_name=f"{catalog_name}.{config.general.ML_ASSET_SCHEMA}.model_monitoring",
+    config=config,
+    env=env,
+    spark=spark,
+)

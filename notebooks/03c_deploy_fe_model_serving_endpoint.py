@@ -127,7 +127,7 @@ logger.info("Started deployment/update of the serving endpoint")
 
 # Create a sample request body
 train_set = spark.table(f"{catalog_name}.{silver_schema_name}.airbnb_listing_price_train").drop(
-            "latitude", "longitude", "is_manhattan","update_timestamp_utc"
+            "latitude", "longitude", "is_manhattan","update_timestamp_utc", config.model.TARGET
         )
 
 train_set = train_set.toPandas()

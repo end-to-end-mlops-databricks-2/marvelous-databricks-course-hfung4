@@ -83,7 +83,7 @@ inference_data_skewed = (
 # COMMAND ----------
 
 # Drop columns that will be retrieved from the feature table, and the update_timestamp_utc
-columns_to_drop = ["latitude","longitude","is_manhattan", "update_timestamp_utc"]
+columns_to_drop = ["latitude","longitude","is_manhattan", "update_timestamp_utc", config.model.TARGET]
 test_set = test_set.drop(columns=columns_to_drop)
 inference_data_skewed = inference_data_skewed.drop(columns=columns_to_drop)
 
@@ -152,8 +152,8 @@ def send_request_workspace(dataframe_record: List[Dict], endpoint_name:str):
 
 # COMMAND ----------
 
-# Loop over test records and send requests for 20 minutes
-end_time = datetime.datetime.now() + datetime.timedelta(minutes=20)
+# Loop over test records and send requests for 10 minutes
+end_time = datetime.datetime.now() + datetime.timedelta(minutes=10)
 for index, record in enumerate(itertools.cycle(test_dataframe_records)):
     if datetime.datetime.now() >= end_time:
         break
@@ -166,8 +166,8 @@ for index, record in enumerate(itertools.cycle(test_dataframe_records)):
 
 # COMMAND ----------
 
-# Loop over test records and send requests for 20 minutes
-end_time = datetime.datetime.now() + datetime.timedelta(minutes=20)
+# Loop over test records and send requests for 10 minutes
+end_time = datetime.datetime.now() + datetime.timedelta(minutes=10)
 for index, record in enumerate(itertools.cycle(skewed_dataframe_records)):
     if datetime.datetime.now() >= end_time:
         break
